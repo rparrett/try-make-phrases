@@ -145,57 +145,62 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
         )
 
         if should_improve:
-            # Improvement cycle: enhance existing phrases with variety
+            # Improvement cycle: focus on single phrase with multiple attempts
             improvement_strategy = iteration % 9  # Cycle through different strategies
 
             if improvement_strategy < 3:
                 # Strategy 1: Improve top-scoring phrases (33% of time)
-                base_phrase_objects = top_phrases[:3]
+                base_phrase_object = top_phrases[0] if top_phrases else None
                 strategy_name = "top-scoring"
             elif improvement_strategy < 6:
                 # Strategy 2: Improve recent phrases (33% of time)
-                recent_phrases = ranker.get_recent_phrases(5)  # Get truly recent phrases by date
-                base_phrase_objects = recent_phrases
+                recent_phrases = ranker.get_recent_phrases(3)  # Get truly recent phrases by date
+                base_phrase_object = recent_phrases[0] if recent_phrases else None
                 strategy_name = "recent"
             else:
                 # Strategy 3: Improve mixed/diverse phrases (33% of time)
                 import random
 
-                # Get a true mix: some top-scoring, some recent, some random
-                top_phrases_for_mix = ranker.get_top_phrases(10)
-                recent_phrases_for_mix = ranker.get_recent_phrases(15)
-                all_phrases_for_mix = ranker.get_phrase_history(50)  # Still score-based for broader pool
+                # Get a mix and randomly select one
+                top_phrases_for_mix = ranker.get_top_phrases(5)
+                recent_phrases_for_mix = ranker.get_recent_phrases(5)
+                all_phrases_for_mix = ranker.get_phrase_history(20)  # Still score-based for broader pool
 
-                selected = []
+                candidates = []
+                candidates.extend(top_phrases_for_mix[:2])  # Top 2 scorers
+                candidates.extend(recent_phrases_for_mix[:2])  # 2 recent
+                candidates.extend(all_phrases_for_mix[5:10])  # Some mid-range phrases
 
-                # Add 1-2 top scorers
-                if top_phrases_for_mix:
-                    selected.extend(top_phrases_for_mix[:2])
+                # Remove duplicates by ID
+                seen_ids = set()
+                unique_candidates = []
+                for phrase in candidates:
+                    if phrase.id not in seen_ids:
+                        unique_candidates.append(phrase)
+                        seen_ids.add(phrase.id)
 
-                # Add 1-2 recent phrases (but avoid duplicates)
-                recent_to_add = [p for p in recent_phrases_for_mix if p.id not in [s.id for s in selected]]
-                selected.extend(recent_to_add[:2])
-
-                # Fill remaining with random selection from broader pool (avoid duplicates)
-                remaining_pool = [p for p in all_phrases_for_mix if p.id not in [s.id for s in selected]]
-                if remaining_pool and len(selected) < 5:
-                    additional_count = min(5 - len(selected), len(remaining_pool))
-                    selected.extend(random.sample(remaining_pool, additional_count))
-
-                base_phrase_objects = selected
+                base_phrase_object = random.choice(unique_candidates) if unique_candidates else None
                 strategy_name = "mixed"
 
-            # Extract phrases and scores for improvement tracking
-            base_phrases = [phrase.phrase for phrase in base_phrase_objects]
-            original_scores = [phrase.score for phrase in base_phrase_objects]
+            if not base_phrase_object:
+                logger.warning("No phrase available for improvement")
+                return 0
 
-            logger.debug(f"Improving {len(base_phrases)} {strategy_name} phrases...")
+            # Extract phrase and score for improvement tracking
+            base_phrase = base_phrase_object.phrase
+            original_score = base_phrase_object.score
 
-            phrase_candidates = llm_client.improve_phrases(
-                base_phrases=base_phrases,
+            logger.debug(f"Improving {strategy_name} phrase: '{base_phrase}' (score: {original_score})")
+
+            # Generate multiple attempts to improve this single phrase
+            phrase_candidates = llm_client.improve_single_phrase(
+                base_phrase=base_phrase,
                 tiles=tiles,
-                batch_size=config.generation_batch_size
+                num_attempts=config.generation_batch_size
             )
+
+            # For statistics tracking, we need the original score repeated for each attempt
+            original_scores = [original_score] * len(phrase_candidates) if phrase_candidates else [original_score]
 
             cycle_type = f"improvement-{strategy_name}"
         else:
@@ -427,13 +432,17 @@ def generate(
     # Create logs directory
     Path("logs").mkdir(exist_ok=True)
 
-    # Configure separate logger for raw LLM responses
+    # Configure separate logger for raw LLM interactions (prompts + responses)
     from loguru import logger as llm_logger
-    llm_logger.add("logs/llm_responses.log",
+    llm_logger.add("logs/llm_interactions.log",
                    rotation="1 day",
                    retention="7 days",
                    level="DEBUG",
-                   filter=lambda record: "Raw LLM response" in record["message"],
+                   filter=lambda record: any(phrase in record["message"] for phrase in [
+                       "Raw LLM response",
+                       "Fresh generation prompt",
+                       "Single phrase improvement prompt"
+                   ]),
                    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
 
     # Configure standard Python logging to not interfere with TUI

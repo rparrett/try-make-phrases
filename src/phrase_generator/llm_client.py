@@ -8,6 +8,7 @@ import re
 import time
 from loguru import logger
 from storage.models import TileInventory, GeneratedPhrase
+from src.phrase_generator.word_dictionary import get_word_dictionary
 
 
 class LLMError(Exception):
@@ -145,7 +146,18 @@ class OllamaClient:
 
         tiles_display = " ".join(available_letters)
 
-        prompt = f"""Create {batch_size} winter-themed phrases
+        # Get high-value inspiration words from dictionary
+        word_dict = get_word_dictionary()
+        inspiration_words = word_dict.get_inspiration_words(tiles, count=15, min_score=6)
+
+        inspiration_section = ""
+        if inspiration_words:
+            inspiration_section = f"""
+HIGH-VALUE WORDS:
+{' - '.join(inspiration_words)}
+"""
+
+        prompt = f"""Create {batch_size} winter-themed phrases using tiles: {tiles_display}
 
 RULES:
 - Use only the letters shown above (each letter limited to shown quantity)
@@ -153,8 +165,7 @@ RULES:
 - Spaces and punctuation are free
 - Create 4-10 word phrases for maximum points
 - Focus on winter, snow, holiday themes
-- Continue the following list of examples in the same format
-
+{inspiration_section}
 EXAMPLES:
 HAVING A HOLLY JOLLY CHRISTMAS
 WINTER MORNING SLEDDING ADVENTURE WITH FRIENDS
@@ -190,7 +201,7 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
         """
         prompt = self.create_wintery_prompt(tiles, context_phrases, batch_size)
 
-        # Log the prompt for debugging
+        # Log the complete prompt for debugging
         self.logger.debug(f"Fresh generation prompt:\n{prompt}")
 
         for attempt in range(self.max_retries):
@@ -321,21 +332,22 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
 
         return phrases[:15]  # Limit to reasonable number
 
-    def improve_phrases(
-        self, base_phrases: List[str], tiles: TileInventory, batch_size: int = 10
+    def improve_single_phrase(
+        self, base_phrase: str, tiles: TileInventory, num_attempts: int = 5
     ) -> List[str]:
         """
-        Improve existing phrases by adding words, replacing adjectives, etc.
+        Improve a single phrase by making multiple improvement attempts.
+        Uses leftover tiles to find high-value inspiration words.
 
         Args:
-            base_phrases: Existing good phrases to improve
+            base_phrase: Single phrase to improve
             tiles: Available tiles for validation
-            batch_size: Number of improved phrases to generate
+            num_attempts: Number of improvement attempts to generate
 
         Returns:
-            List of improved phrase strings
+            List of improved phrase variants
         """
-        if not base_phrases:
+        if not base_phrase:
             return []
 
         # Convert tiles to a readable format
@@ -348,38 +360,43 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
 
         tiles_display = " ".join(available_letters)
 
-        # Select phrases to improve (up to 3)
-        phrases_to_improve = base_phrases[:3]
+        # Get leftover tile inspiration words
+        word_dict = get_word_dictionary()
+        leftover_inspiration = word_dict.get_leftover_inspiration_words(
+            base_phrase, tiles, count=12, min_score=4
+        )
 
-        prompt = f"""Improve these winter phrases by making them longer using ONLY these tiles: {tiles_display}
+        leftover_section = ""
+        if leftover_inspiration:
+            leftover_section = f"""
+AVAILABLE WORDS FROM LEFTOVER TILES:
+{' - '.join(leftover_inspiration)}
+"""
 
-ORIGINAL PHRASES TO IMPROVE:"""
+        prompt = f"""Improve this winter phrase by making {num_attempts} different variations using tiles: {tiles_display}
 
-        for i, phrase in enumerate(phrases_to_improve, 1):
-            prompt += f"\n{i}. {phrase}"
-
-        prompt += f"""
-
+ORIGINAL PHRASE TO IMPROVE: {base_phrase}
+{leftover_section}
 IMPROVEMENT METHODS:
 - Add adjectives: COLD BREEZE → COLD WINTER BREEZE
 - Add adverbs: COLD BREEZE → REMARKABLY COLD BREEZE
 - Add locations: SNOWY PARK → SNOWY PARK WITH TREES
 - Add activities: WINTER MORNING → WINTER MORNING SLEDDING
-- Swap a word for a higher-scoring one: WINTER MORNING -> WINTER EVENING
+- Swap words for higher-scoring ones: WINTER MORNING → WINTER EVENING
 - Add details: HOLIDAY CHEER → HOLIDAY CHEER AND JOY
 
-Make each phrase longer for maximum points, but remember they are to be phrases, not full sentences.
+Generate {num_attempts} different improved versions. Make each phrase longer for maximum Scrabble points.
 
-Output format - one improved phrase per line, with no commentary or other annotations:
+Output format - one improved phrase per line, no numbering or commentary:
 
-COLD WINTER BREEZE THROUGH THE TREES
-SNOWY PARK WITH CHILDREN SLEDDING
-WINTER MORNING SLEDDING ADVENTURE
+COLD WINTER BREEZE THROUGH THE SNOWY FOREST
+REMARKABLY COLD WINTER MORNING WITH FROST
+WINTER MORNING SLEDDING ADVENTURE IN VERMONT
 
-{batch_size} improved phrases:"""
+{num_attempts} improved versions:"""
 
         # Log the improvement prompt for debugging
-        self.logger.debug(f"Improvement prompt:\n{prompt}")
+        self.logger.debug(f"Single phrase improvement prompt:\n{prompt}")
 
         try:
             response = ollama.generate(
@@ -389,7 +406,7 @@ WINTER MORNING SLEDDING ADVENTURE
                     "temperature": 0.9,  # More creative for improvements
                     "top_k": 40,
                     "top_p": 0.9,
-                    "num_predict": 250,  # Allow longer responses
+                    "num_predict": 300,  # Allow longer responses for multiple attempts
                 },
             )
 
@@ -397,14 +414,14 @@ WINTER MORNING SLEDDING ADVENTURE
 
             # Log raw LLM response for debugging
             self.logger.debug(
-                f"Raw LLM response for phrase improvement:\n{raw_response}"
+                f"Raw LLM response for single phrase improvement:\n{raw_response}"
             )
 
             improved_phrases = self._parse_phrase_response(raw_response)
 
             if improved_phrases:
                 self.logger.debug(
-                    f"Improved {len(improved_phrases)} phrases successfully"
+                    f"Generated {len(improved_phrases)} variations of '{base_phrase}'"
                 )
                 return improved_phrases
             else:
@@ -414,7 +431,7 @@ WINTER MORNING SLEDDING ADVENTURE
                 return []
 
         except Exception as e:
-            self.logger.error(f"Phrase improvement failed: {e}")
+            self.logger.error(f"Single phrase improvement failed: {e}")
             return []
 
     def _is_valid_phrase_format(self, phrase: str) -> bool:

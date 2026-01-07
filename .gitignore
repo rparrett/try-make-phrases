@@ -166,6 +166,9 @@ data/
 *.sqlite
 *.sqlite3
 
+# Dictionary files
+google-10000-english.txt
+
 # Log files
 logs/
 *.log
