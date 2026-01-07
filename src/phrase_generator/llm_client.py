@@ -342,7 +342,7 @@ IMPROVEMENT METHODS:
 
 Make each phrase longer for maximum points.
 
-Output format - one improved phrase per line:
+Output format - one improved phrase per line, with no commentary or other annotations:
 
 COLD WINTER BREEZE THROUGH THE TREES
 SNOWY PARK WITH CHILDREN SLEDDING

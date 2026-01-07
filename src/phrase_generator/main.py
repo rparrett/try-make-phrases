@@ -201,7 +201,8 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
 
 
 async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
-                             console: Console, db_path: str = "data/phrases.db"):
+                             console: Console, db_path: str = "data/phrases.db",
+                             model_name: str = "llama2:7b"):
     """
     Main continuous generation loop with MacBook optimizations.
     """
@@ -216,7 +217,7 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
         logger.info(f"Parsed {sum(tiles.tiles.values())} tiles: {tiles.tiles}")
 
         # Initialize components
-        llm_client = OllamaClient()
+        llm_client = OllamaClient(model_name)
         ranker = PhraseRanker(db_path, config)
         db = PhraseDatabase(db_path)
 
@@ -330,6 +331,7 @@ def generate(
     delay: int = typer.Option(30, "--delay", help="Seconds between cycles"),
     min_score: int = typer.Option(10, "--min-score", help="Minimum score threshold"),
     max_phrases: int = typer.Option(1000, "--max-phrases", help="Maximum phrases to keep"),
+    model: str = typer.Option("llama2:7b", "--model", "-m", help="Ollama model to use"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose logging")
 ):
     """Start continuous phrase generation."""
@@ -367,6 +369,7 @@ def generate(
     console.print(Panel.fit(
         f"Starting Scrabble Phrase Generator\n"
         f"Tiles: {tiles}\n"
+        f"Model: {model}\n"
         f"Batch size: {batch_size}\n"
         f"Delay: {delay}s\n"
         f"Min score: {min_score}\n"
@@ -379,7 +382,7 @@ def generate(
 
     # Run the generation loop
     try:
-        result = asyncio.run(main_generation_loop(tiles, config, console, db_path))
+        result = asyncio.run(main_generation_loop(tiles, config, console, db_path, model))
         if result:
             console.print("[green]Generation completed successfully[/green]")
         else:
