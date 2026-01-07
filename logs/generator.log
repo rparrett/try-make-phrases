@@ -1,0 +1,235 @@
+2026-01-06 15:59:11.079 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:00:11.859 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:00:15.065 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:16.047 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:16.248 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:18.534 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:18.735 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:18.751 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:18.948 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:18.951 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:19.152 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.099 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.302 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.450 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.624 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.652 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.782 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.854 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:49.934 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:50.057 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:50.091 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:50.258 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:50.461 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:50.760 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:50.962 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.261 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.344 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.427 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.462 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.510 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.593 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.664 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:00:51.866 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:01:01.031 | INFO     | __main__:main_generation_loop:218 - Started generation session 1
+2026-01-06 16:01:01.032 | INFO     | __main__:main_generation_loop:219 - Using model: llama2:7b
+2026-01-06 16:01:02.060 | INFO     | __main__:main_generation_loop:307 - Session completed: 0 valid phrases from 0 generated
+2026-01-06 16:01:12.744 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:01:20.533 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:01:38.489 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:03:52.407 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:03:52.714 | INFO     | __main__:main_generation_loop:218 - Started generation session 2
+2026-01-06 16:03:52.714 | INFO     | __main__:main_generation_loop:219 - Using model: llama2:7b
+2026-01-06 16:03:54.754 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 60s
+2026-01-06 16:04:55.772 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 60s
+2026-01-06 16:05:07.209 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:10.383 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:10.585 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:13.808 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:14.010 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:14.110 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:14.312 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.058 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.261 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.275 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.440 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.477 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.676 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.678 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.868 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:15.881 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:16.083 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:05:33.120 | INFO     | __main__:main_generation_loop:204 - Parsed 21 tiles: {'W': 3, 'I': 1, 'N': 2, 'T': 1, 'E': 1, 'R': 1, 'S': 5, 'O': 2, 'C': 3, 'L': 1, 'D': 1}
+2026-01-06 16:05:33.436 | INFO     | __main__:main_generation_loop:218 - Started generation session 3
+2026-01-06 16:05:33.436 | INFO     | __main__:main_generation_loop:219 - Using model: llama2:7b
+2026-01-06 16:05:35.471 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 10s
+2026-01-06 16:05:46.483 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 10s
+2026-01-06 16:06:59.588 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:06:59.898 | INFO     | __main__:main_generation_loop:218 - Started generation session 4
+2026-01-06 16:06:59.898 | INFO     | __main__:main_generation_loop:219 - Using model: llama2:7b
+2026-01-06 16:07:01.940 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:02.955 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:03.967 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:04.986 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:06.004 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:07.020 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:08.032 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:09.051 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:10.061 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:11.076 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:12.088 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:13.105 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:14.123 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:15.134 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:16.153 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:17.169 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:18.188 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:19.204 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:20.220 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:21.237 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:22.253 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:23.268 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:24.277 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:25.295 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:26.309 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:27.322 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:28.340 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:29.358 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:30.374 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:31.393 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:32.404 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:33.418 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:34.436 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:35.455 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:36.473 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:37.489 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:38.508 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:39.526 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:40.544 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:41.561 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:42.575 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:43.594 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:44.609 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:45.627 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:46.641 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:47.658 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:48.672 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:49.689 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:50.705 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:51.719 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:52.738 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:53.754 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:54.771 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:55.791 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:56.808 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:57.823 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:58.837 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:07:59.849 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:00.864 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:01.879 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:02.893 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:03.909 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:04.925 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:05.938 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:06.954 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:07.972 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:08.985 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:10.003 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:11.020 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:12.036 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:13.053 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:14.069 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:15.084 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:16.102 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:17.120 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:18.139 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:19.152 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:20.171 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:21.192 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:22.209 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:23.224 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:24.243 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:25.255 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:26.271 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:27.280 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:28.292 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:29.303 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:30.316 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:31.337 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:32.353 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:33.370 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:34.389 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:35.403 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:36.408 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:37.421 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:38.430 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:39.442 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:40.457 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:41.473 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:42.487 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:43.494 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:44.506 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:45.181 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:08:45.517 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:08:45.517 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:08:45.521 | INFO     | __main__:main_generation_loop:307 - Session completed: 0 valid phrases from 0 generated
+2026-01-06 16:10:26.255 | INFO     | __main__:main_generation_loop:204 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:10:26.259 | INFO     | __main__:main_generation_loop:218 - Started generation session 5
+2026-01-06 16:10:26.259 | INFO     | __main__:main_generation_loop:219 - Using model: llama2:7b
+2026-01-06 16:10:28.302 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:29.316 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:30.331 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:31.341 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:32.356 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:33.369 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:34.387 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:35.397 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:36.412 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:37.425 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:38.442 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:39.456 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:40.473 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:41.488 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:42.504 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:43.518 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:43.999 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:10:44.406 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:10:44.535 | WARNING  | __main__:main_generation_loop:243 - System under stress, throttling for 0s
+2026-01-06 16:10:44.540 | INFO     | __main__:main_generation_loop:307 - Session completed: 0 valid phrases from 0 generated
+2026-01-06 16:12:27.059 | INFO     | __main__:main_generation_loop:201 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:12:27.062 | INFO     | __main__:main_generation_loop:215 - Started generation session 6
+2026-01-06 16:12:27.062 | INFO     | __main__:main_generation_loop:216 - Using model: llama2:7b
+2026-01-06 16:12:30.168 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 4 valid phrases
+2026-01-06 16:12:39.876 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 4 valid phrases
+2026-01-06 16:12:49.868 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 4 valid phrases
+2026-01-06 16:16:58.413 | INFO     | __main__:main_generation_loop:201 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:16:58.418 | INFO     | __main__:main_generation_loop:215 - Started generation session 7
+2026-01-06 16:16:58.418 | INFO     | __main__:main_generation_loop:216 - Using model: llama2:7b
+2026-01-06 16:17:01.445 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 16:17:09.230 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 1 valid phrases
+2026-01-06 16:17:17.525 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 1 valid phrases
+2026-01-06 16:18:00.028 | INFO     | __main__:main_generation_loop:201 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 16:18:00.030 | INFO     | __main__:main_generation_loop:215 - Started generation session 8
+2026-01-06 16:18:00.031 | INFO     | __main__:main_generation_loop:216 - Using model: llama2:7b
+2026-01-06 16:18:03.059 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 16:18:05.363 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 3 valid phrases
+2026-01-06 16:18:08.697 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 16:18:10.921 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 2 valid phrases
+2026-01-06 16:18:15.049 | INFO     | __main__:generation_cycle:172 - Generated 3 candidates, added 0 valid phrases
+2026-01-06 16:18:17.817 | INFO     | __main__:generation_cycle:172 - Generated 3 candidates, added 0 valid phrases
+2026-01-06 16:18:19.967 | INFO     | __main__:generation_cycle:172 - Generated 3 candidates, added 1 valid phrases
+2026-01-06 16:18:22.483 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 1 valid phrases
+2026-01-06 16:18:24.195 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 1 valid phrases
+2026-01-06 16:18:25.991 | INFO     | __main__:generation_cycle:172 - Generated 3 candidates, added 1 valid phrases
+2026-01-06 16:18:28.133 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 16:18:30.776 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 16:18:32.712 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 2 valid phrases
+2026-01-06 16:18:34.621 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 2 valid phrases
+2026-01-06 16:18:36.978 | INFO     | __main__:generation_cycle:172 - Generated 2 candidates, added 1 valid phrases
+2026-01-06 16:18:39.220 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 0 valid phrases
+2026-01-06 16:18:41.781 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 2 valid phrases
+2026-01-06 16:18:44.249 | INFO     | __main__:generation_cycle:172 - Generated 3 candidates, added 2 valid phrases
+2026-01-06 16:18:46.408 | INFO     | __main__:generation_cycle:172 - Generated 4 candidates, added 4 valid phrases
+2026-01-06 16:18:50.362 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 16:18:50.559 | INFO     | __main__:generation_cycle:172 - Generated 3 candidates, added 2 valid phrases
+2026-01-06 16:18:50.561 | INFO     | __main__:main_generation_loop:299 - Session completed: 24 valid phrases from 20 generated
