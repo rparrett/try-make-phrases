@@ -12,6 +12,7 @@ from storage.models import TileInventory, GeneratedPhrase
 
 class LLMError(Exception):
     """Exception raised for LLM operations."""
+
     pass
 
 
@@ -41,39 +42,54 @@ class OllamaClient:
 
             # Handle the new typed response from ollama
             model_names = []
-            if hasattr(models_response, 'models'):
+            if hasattr(models_response, "models"):
                 # New ollama client returns ListResponse object
                 for model in models_response.models:
-                    if hasattr(model, 'model'):
+                    if hasattr(model, "model"):
                         model_names.append(model.model)
-                    elif hasattr(model, 'name'):
+                    elif hasattr(model, "name"):
                         model_names.append(model.name)
-            elif isinstance(models_response, dict) and 'models' in models_response:
+            elif isinstance(models_response, dict) and "models" in models_response:
                 # Fallback for older API format
-                for model in models_response['models']:
+                for model in models_response["models"]:
                     if isinstance(model, dict):
-                        name = model.get('name') or model.get('model')
+                        name = model.get("name") or model.get("model")
                         if name:
                             model_names.append(name)
 
             self.logger.info(f"Available Ollama models: {model_names}")
 
             if self.model_name not in model_names:
-                self.logger.warning(f"Model {self.model_name} not found in available models: {model_names}")
+                self.logger.warning(
+                    f"Model {self.model_name} not found in available models: {model_names}"
+                )
 
                 # Try to pull the model if it's a standard one
-                if self.model_name in ['llama2:7b', 'mistral:7b', 'phi:2.7b', 'llama2', 'mistral', 'phi']:
+                if self.model_name in [
+                    "llama2:7b",
+                    "mistral:7b",
+                    "phi:2.7b",
+                    "llama2",
+                    "mistral",
+                    "phi",
+                ]:
                     self.logger.info(f"Attempting to pull model: {self.model_name}")
                     try:
                         ollama.pull(self.model_name)
-                        self.logger.info(f"Successfully pulled model: {self.model_name}")
+                        self.logger.info(
+                            f"Successfully pulled model: {self.model_name}"
+                        )
                     except Exception as pull_error:
                         self.logger.error(f"Failed to pull model: {pull_error}")
                         if model_names:
                             self.model_name = model_names[0]
-                            self.logger.warning(f"Using first available model as fallback: {self.model_name}")
+                            self.logger.warning(
+                                f"Using first available model as fallback: {self.model_name}"
+                            )
                         else:
-                            raise LLMError(f"No models available and failed to pull {self.model_name}")
+                            raise LLMError(
+                                f"No models available and failed to pull {self.model_name}"
+                            )
                 else:
                     # Use first available model as fallback
                     if model_names:
@@ -91,13 +107,23 @@ class OllamaClient:
             # Try a simple ping to check if Ollama is running
             try:
                 # Try a minimal generate call to test connection
-                test_response = ollama.generate(model=self.model_name, prompt="test", options={"num_predict": 1})
-                self.logger.info(f"Ollama connection verified with model: {self.model_name}")
+                test_response = ollama.generate(
+                    model=self.model_name, prompt="test", options={"num_predict": 1}
+                )
+                self.logger.info(
+                    f"Ollama connection verified with model: {self.model_name}"
+                )
             except Exception as test_error:
-                raise LLMError(f"Failed to connect to Ollama. Make sure Ollama is running and the model is available. Error: {e}")
+                raise LLMError(
+                    f"Failed to connect to Ollama. Make sure Ollama is running and the model is available. Error: {e}"
+                )
 
-    def create_wintery_prompt(self, tiles: TileInventory, context_phrases: Optional[List[str]] = None,
-                            batch_size: int = 10) -> str:
+    def create_wintery_prompt(
+        self,
+        tiles: TileInventory,
+        context_phrases: Optional[List[str]] = None,
+        batch_size: int = 10,
+    ) -> str:
         """
         Create a prompt for generating wintery phrases from available tiles.
 
@@ -119,42 +145,31 @@ class OllamaClient:
 
         tiles_display = " ".join(available_letters)
 
-        prompt = f"""Create winter-themed phrases using ONLY these Scrabble tiles: {tiles_display}
+        prompt = f"""Create {batch_size} winter-themed phrases
 
 RULES:
 - Use only the letters shown above (each letter limited to shown quantity)
 - Blank tiles (_) can be any letter
 - Spaces and punctuation are free
-- Create 4-8 word phrases for maximum points
+- Create 4-10 word phrases for maximum points
 - Focus on winter, snow, holiday themes
+- Continue the following list of examples in the same format
 
 EXAMPLES:
-WINTER MORNING SLEDDING ADVENTURE
+WINTER MORNING SLEDDING ADVENTURE WITH FRIENDS
 COZY FIREPLACE ON SNOWY EVENING
 HOLIDAY CELEBRATION WITH FAMILY
-ICE SKATING ON FROZEN POND
+ICE SKATING ON FROZEN POND IN NEBRASKA
 
 """
-
-        if context_phrases:
-            prompt += f"\nINSPIRATION from previous good phrases:\n"
-            for phrase in context_phrases[-3:]:  # Use last 3 for inspiration
-                prompt += f"- {phrase}\n"
-
-        prompt += f"""
-
-Generate {batch_size} winter phrases. Output format - one phrase per line:
-
-WINTER STORIES AND MEMORIES
-ICE SKATING ON THE POND
-COZY READING BY THE FIRE
-
-{batch_size} phrases:"""
-
         return prompt
 
-    def generate_phrases(self, tiles: TileInventory, context_phrases: Optional[List[str]] = None,
-                        batch_size: int = 10) -> List[str]:
+    def generate_phrases(
+        self,
+        tiles: TileInventory,
+        context_phrases: Optional[List[str]] = None,
+        batch_size: int = 10,
+    ) -> List[str]:
         """
         Generate wintery phrases using the LLM.
 
@@ -179,29 +194,33 @@ COZY READING BY THE FIRE
                     model=self.model_name,
                     prompt=prompt,
                     options={
-                        'temperature': 0.8,  # Some creativity but not too random
-                        'top_k': 40,
-                        'top_p': 0.9,
-                        'num_predict': 200,  # Limit response length
-                    }
+                        "temperature": 0.8,  # Some creativity but not too random
+                        "top_k": 40,
+                        "top_p": 0.9,
+                        "num_predict": 200,  # Limit response length
+                    },
                 )
 
-                raw_response = response['response']
+                raw_response = response["response"]
                 phrases = self._parse_phrase_response(raw_response)
 
                 if phrases:
                     self.logger.debug(f"Generated {len(phrases)} phrases successfully")
                     return phrases
                 else:
-                    self.logger.warning(f"No valid phrases in response: {raw_response[:100]}...")
+                    self.logger.warning(
+                        f"No valid phrases in response: {raw_response[:100]}..."
+                    )
 
             except Exception as e:
                 self.logger.error(f"Generation attempt {attempt + 1} failed: {e}")
                 if attempt == self.max_retries - 1:
-                    raise LLMError(f"Failed to generate phrases after {self.max_retries} attempts: {e}")
+                    raise LLMError(
+                        f"Failed to generate phrases after {self.max_retries} attempts: {e}"
+                    )
 
                 # Wait before retrying
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
         return []
 
@@ -218,7 +237,7 @@ COZY READING BY THE FIRE
         phrases = []
 
         # Split by lines and clean up
-        lines = response.strip().split('\n')
+        lines = response.strip().split("\n")
 
         for line in lines:
             # Clean the line
@@ -229,17 +248,17 @@ COZY READING BY THE FIRE
                 continue
 
             # Remove common prefixes/bullets and numbering
-            line = re.sub(r'^[\d\.\-\*\+\s]*', '', line)
+            line = re.sub(r"^[\d\.\-\*\+\s]*", "", line)
             line = line.strip()
 
             # Remove explanatory text after dashes or descriptions
             # Handle formats like: "PHRASE NAME" - This phrase adds...
-            if ' - ' in line:
-                line = line.split(' - ')[0].strip()
+            if " - " in line:
+                line = line.split(" - ")[0].strip()
 
             # Remove word count annotations like "- 7 WORDS" or "(5 words)"
-            line = re.sub(r'\s*-\s*\d+\s*WORDS?\s*$', '', line, flags=re.IGNORECASE)
-            line = re.sub(r'\s*\(\d+\s*words?\)\s*$', '', line, flags=re.IGNORECASE)
+            line = re.sub(r"\s*-\s*\d+\s*WORDS?\s*$", "", line, flags=re.IGNORECASE)
+            line = re.sub(r"\s*\(\d+\s*words?\)\s*$", "", line, flags=re.IGNORECASE)
             line = line.strip()
 
             # Remove quotes if present
@@ -251,10 +270,21 @@ COZY READING BY THE FIRE
             line = line.strip()
 
             # Skip if it looks like a model response artifact
-            if any(skip_phrase in line.lower() for skip_phrase in [
-                'your', 'phrases:', 'generate', 'available', 'tiles',
-                'format', 'response', 'here are', 'output', 'improved'
-            ]):
+            if any(
+                skip_phrase in line.lower()
+                for skip_phrase in [
+                    "your",
+                    "phrases:",
+                    "generate",
+                    "available",
+                    "tiles",
+                    "format",
+                    "response",
+                    "here are",
+                    "output",
+                    "improved",
+                ]
+            ):
                 continue
 
             # Basic validation - should look like a phrase
@@ -263,8 +293,9 @@ COZY READING BY THE FIRE
 
         return phrases[:15]  # Limit to reasonable number
 
-    def improve_phrases(self, base_phrases: List[str], tiles: TileInventory,
-                       batch_size: int = 10) -> List[str]:
+    def improve_phrases(
+        self, base_phrases: List[str], tiles: TileInventory, batch_size: int = 10
+    ) -> List[str]:
         """
         Improve existing phrases by adding words, replacing adjectives, etc.
 
@@ -303,11 +334,13 @@ ORIGINAL PHRASES TO IMPROVE:"""
 
 IMPROVEMENT METHODS:
 - Add adjectives: COLD BREEZE → COLD WINTER BREEZE
+- Add adverbs: COLD BREEZE → REMARKABLY COLD BREEZE
 - Add locations: SNOWY PARK → SNOWY PARK WITH TREES
 - Add activities: WINTER MORNING → WINTER MORNING SLEDDING
+- Swap a word for a higher-scoring one: WINTER MORNING -> WINTER EVENING
 - Add details: HOLIDAY CHEER → HOLIDAY CHEER AND JOY
 
-Make each phrase 5-10 words long for maximum points.
+Make each phrase longer for maximum points.
 
 Output format - one improved phrase per line:
 
@@ -322,21 +355,25 @@ WINTER MORNING SLEDDING ADVENTURE
                 model=self.model_name,
                 prompt=prompt,
                 options={
-                    'temperature': 0.9,  # More creative for improvements
-                    'top_k': 40,
-                    'top_p': 0.9,
-                    'num_predict': 250,  # Allow longer responses
-                }
+                    "temperature": 0.9,  # More creative for improvements
+                    "top_k": 40,
+                    "top_p": 0.9,
+                    "num_predict": 250,  # Allow longer responses
+                },
             )
 
-            raw_response = response['response']
+            raw_response = response["response"]
             improved_phrases = self._parse_phrase_response(raw_response)
 
             if improved_phrases:
-                self.logger.debug(f"Improved {len(improved_phrases)} phrases successfully")
+                self.logger.debug(
+                    f"Improved {len(improved_phrases)} phrases successfully"
+                )
                 return improved_phrases
             else:
-                self.logger.warning(f"No valid improved phrases in response: {raw_response[:100]}...")
+                self.logger.warning(
+                    f"No valid improved phrases in response: {raw_response[:100]}..."
+                )
                 return []
 
         except Exception as e:
@@ -346,7 +383,7 @@ WINTER MORNING SLEDDING ADVENTURE
     def _is_valid_phrase_format(self, phrase: str) -> bool:
         """Check if a string looks like a valid phrase."""
         # Must contain letters
-        if not re.search(r'[a-zA-Z]', phrase):
+        if not re.search(r"[a-zA-Z]", phrase):
             return False
 
         # Reasonable length
@@ -354,11 +391,11 @@ WINTER MORNING SLEDDING ADVENTURE
             return False
 
         # Should have at least one space (multi-word phrase) or be a compound word
-        if ' ' not in phrase and len(phrase) < 8:
+        if " " not in phrase and len(phrase) < 8:
             return False
 
         # Shouldn't have too many special characters
-        special_count = len(re.findall(r'[^a-zA-Z\s\'\-\.]', phrase))
+        special_count = len(re.findall(r"[^a-zA-Z\s\'\-\.]", phrase))
         if special_count > 2:
             return False
 
@@ -369,32 +406,40 @@ WINTER MORNING SLEDDING ADVENTURE
         try:
             models_response = ollama.list()
 
-            if hasattr(models_response, 'models'):
+            if hasattr(models_response, "models"):
                 # New ollama client returns ListResponse object
                 for model in models_response.models:
-                    if hasattr(model, 'model') and model.model == self.model_name:
+                    if hasattr(model, "model") and model.model == self.model_name:
                         return {
-                            'name': model.model,
-                            'size': getattr(model, 'size', 'unknown'),
-                            'modified': str(getattr(model, 'modified_at', 'unknown')),
-                            'family': getattr(getattr(model, 'details', None), 'family', 'unknown') if hasattr(model, 'details') else 'unknown',
+                            "name": model.model,
+                            "size": getattr(model, "size", "unknown"),
+                            "modified": str(getattr(model, "modified_at", "unknown")),
+                            "family": getattr(
+                                getattr(model, "details", None), "family", "unknown"
+                            )
+                            if hasattr(model, "details")
+                            else "unknown",
                         }
-            elif isinstance(models_response, dict) and 'models' in models_response:
+            elif isinstance(models_response, dict) and "models" in models_response:
                 # Fallback for older API format
-                for model in models_response['models']:
+                for model in models_response["models"]:
                     if isinstance(model, dict):
-                        model_name = model.get('name') or model.get('model')
+                        model_name = model.get("name") or model.get("model")
                         if model_name == self.model_name:
                             return {
-                                'name': model_name,
-                                'size': model.get('size', 'unknown'),
-                                'modified': model.get('modified_at', 'unknown'),
-                                'family': model.get('details', {}).get('family', 'unknown') if 'details' in model else 'unknown',
+                                "name": model_name,
+                                "size": model.get("size", "unknown"),
+                                "modified": model.get("modified_at", "unknown"),
+                                "family": model.get("details", {}).get(
+                                    "family", "unknown"
+                                )
+                                if "details" in model
+                                else "unknown",
                             }
 
-            return {'name': self.model_name, 'status': 'not_found'}
+            return {"name": self.model_name, "status": "not_found"}
         except Exception as e:
-            return {'name': self.model_name, 'error': str(e)}
+            return {"name": self.model_name, "error": str(e)}
 
 
 # Testing and examples
