@@ -187,6 +187,67 @@ class PhraseDatabase:
         except Exception as e:
             raise DatabaseError(f"Failed to get recent phrases: {e}")
 
+    def recalculate_scores_for_tileset(self, tiles, scorer, validator) -> Dict[str, int]:
+        """
+        Recalculate all phrase scores for a new tile set.
+        Remove phrases that cannot be constructed.
+
+        Args:
+            tiles: TileInventory for the current session
+            scorer: ScrabbleScorer instance
+            validator: PhraseValidator instance
+
+        Returns:
+            Dict with recalculation stats
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+
+                # Get all phrases
+                rows = conn.execute("SELECT id, phrase FROM phrases").fetchall()
+
+                updated_count = 0
+                removed_count = 0
+                score_changes = []
+
+                for row in rows:
+                    phrase_id = row['id']
+                    phrase_text = row['phrase']
+
+                    # Check if phrase can be constructed with current tiles
+                    is_valid, tiles_used, error = validator.validate_phrase(phrase_text, tiles)
+
+                    if not is_valid:
+                        # Remove phrases that can't be constructed
+                        conn.execute("DELETE FROM phrases WHERE id = ?", (phrase_id,))
+                        removed_count += 1
+                        continue
+
+                    # Calculate new score
+                    new_score = scorer.score_phrase_simple(phrase_text, tiles_used)
+
+                    # Update phrase with new score and tiles_used
+                    conn.execute("""
+                        UPDATE phrases
+                        SET score = ?, tiles_used = ?
+                        WHERE id = ?
+                    """, (new_score, json.dumps(tiles_used), phrase_id))
+
+                    updated_count += 1
+                    score_changes.append((phrase_text, new_score))
+
+                conn.commit()
+
+                return {
+                    'updated_count': updated_count,
+                    'removed_count': removed_count,
+                    'score_changes': score_changes
+                }
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to recalculate scores: {e}")
+
     def get_phrase_count(self) -> int:
         """Get total number of phrases in database."""
         try:

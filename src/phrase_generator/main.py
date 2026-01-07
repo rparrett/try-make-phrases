@@ -286,7 +286,7 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
 
 async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
                              console: Console, db_path: str = "data/phrases.db",
-                             model_name: str = "llama2:7b"):
+                             model_name: str = "llama2:7b", skip_recalc: bool = False):
     """
     Main continuous generation loop with MacBook optimizations.
     """
@@ -304,6 +304,33 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
         llm_client = OllamaClient(model_name)
         ranker = PhraseRanker(db_path, config)
         db = PhraseDatabase(db_path)
+
+        # Recalculate existing phrase scores for current tile set
+        if not skip_recalc:
+            logger.info("Recalculating phrase scores for current tile set...")
+            try:
+                from src.phrase_generator.scorer import ScrabbleScorer
+                from src.phrase_generator.phrase_validator import PhraseValidator
+
+                scorer = ScrabbleScorer()
+                validator = PhraseValidator()
+
+                recalc_stats = db.recalculate_scores_for_tileset(tiles, scorer, validator)
+                logger.info(f"Score recalculation completed: "
+                           f"{recalc_stats['updated_count']} phrases updated, "
+                           f"{recalc_stats['removed_count']} phrases removed (unbuildable)")
+
+                if recalc_stats['updated_count'] > 0:
+                    console.print(f"[green]Recalculated scores for {recalc_stats['updated_count']} phrases[/green]")
+                if recalc_stats['removed_count'] > 0:
+                    console.print(f"[yellow]Removed {recalc_stats['removed_count']} unbuildable phrases[/yellow]")
+
+            except Exception as e:
+                logger.warning(f"Failed to recalculate scores: {e}")
+                console.print(f"[yellow]Warning: Could not recalculate phrase scores: {e}[/yellow]")
+        else:
+            logger.info("Skipping phrase score recalculation (--skip-recalc flag set)")
+            console.print("[blue]Skipping phrase score recalculation[/blue]")
 
         # Start session tracking
         session_id = db.start_generation_session(tiles_input)
@@ -412,7 +439,8 @@ def generate(
     min_score: int = typer.Option(10, "--min-score", help="Minimum score threshold"),
     max_phrases: int = typer.Option(1000, "--max-phrases", help="Maximum phrases to keep"),
     model: str = typer.Option("llama2:7b", "--model", "-m", help="Ollama model to use"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose logging")
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose logging"),
+    skip_recalc: bool = typer.Option(False, "--skip-recalc", help="Skip phrase score recalculation")
 ):
     """Start continuous phrase generation."""
     console = Console()
@@ -475,7 +503,7 @@ def generate(
 
     # Run the generation loop
     try:
-        result = asyncio.run(main_generation_loop(tiles, config, console, db_path, model))
+        result = asyncio.run(main_generation_loop(tiles, config, console, db_path, model, skip_recalc))
         if result:
             console.print("[green]Generation completed successfully[/green]")
         else:
