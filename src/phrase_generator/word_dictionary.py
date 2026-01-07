@@ -69,6 +69,14 @@ class WordDictionary:
             logger.info(f"Scored {len(self.scored_words)} words. "
                        f"Top score: {self.scored_words[0][1] if self.scored_words else 0}")
 
+            # Debug: Show some examples
+            if self.scored_words:
+                logger.debug(f"Top 10 words by score: {self.scored_words[:10]}")
+                logger.debug(f"Score distribution sample: scores 20+: {len([w for w, s in self.scored_words if s >= 20])}, "
+                           f"15+: {len([w for w, s in self.scored_words if s >= 15])}, "
+                           f"10+: {len([w for w, s in self.scored_words if s >= 10])}, "
+                           f"5+: {len([w for w, s in self.scored_words if s >= 5])}")
+
         except Exception as e:
             logger.error(f"Failed to load dictionary: {e}")
             self.scored_words = []
@@ -87,9 +95,14 @@ class WordDictionary:
             List of (word, score) tuples, sorted by score descending
         """
         buildable_words = []
+        checked_count = 0
+        skipped_low_score = 0
 
         for word, score in self.scored_words:
+            checked_count += 1
+
             if score < min_score:
+                skipped_low_score += 1
                 continue
 
             # Check if word can be built with available tiles
@@ -98,6 +111,10 @@ class WordDictionary:
 
                 if len(buildable_words) >= max_words:
                     break
+
+        logger.debug(f"Buildable words search: checked {checked_count} words, "
+                    f"skipped {skipped_low_score} low-scoring, "
+                    f"found {len(buildable_words)} buildable")
 
         return buildable_words
 
@@ -114,19 +131,33 @@ class WordDictionary:
         Returns:
             List of high-scoring words that can be built
         """
+        logger.debug(f"Getting {count} inspiration words with min_score={min_score}")
+        logger.debug(f"Available tiles for inspiration: {tiles.tiles}")
+
         buildable = self.get_buildable_words(tiles, min_score=min_score, max_words=200)
+
+        logger.debug(f"Found {len(buildable)} buildable words (min_score={min_score})")
 
         if not buildable:
             logger.debug("No buildable inspiration words found")
             return []
+
+        if buildable:
+            logger.debug(f"Buildable words sample: {buildable[:20]}")  # Show first 20
 
         # Prefer higher-scoring words but add some randomness
         # Take top 50% and randomly sample from those
         top_half_count = max(1, len(buildable) // 2)
         top_words = buildable[:top_half_count]
 
+        logger.debug(f"Taking top {top_half_count} words from {len(buildable)} buildable words")
+
         # Randomly sample from the top words
         sample_count = min(count, len(top_words))
+
+        if len(top_words) < sample_count:
+            logger.debug(f"Warning: Only {len(top_words)} top words available, requested {sample_count}")
+
         sampled = random.sample(top_words, sample_count)
 
         words = [word for word, score in sampled]
@@ -148,6 +179,9 @@ class WordDictionary:
         Returns:
             List of words buildable from leftover tiles
         """
+        logger.debug(f"Getting leftover inspiration for phrase: '{base_phrase}'")
+        logger.debug(f"Original tiles: {tiles.tiles}")
+
         # Calculate leftover tiles after making the base phrase
         is_valid, tiles_used, error = self.validator.validate_phrase(base_phrase, tiles)
 
@@ -155,14 +189,21 @@ class WordDictionary:
             logger.debug(f"Base phrase '{base_phrase}' is not valid: {error}")
             return []
 
+        logger.debug(f"Base phrase tiles used: {tiles_used}")
+
         # Create leftover tile inventory
         leftover_tiles_dict = tiles.tiles.copy()
-        for letter, count in tiles_used.items():
+        for letter, used_count in tiles_used.items():
             if letter in leftover_tiles_dict:
-                leftover_tiles_dict[letter] = max(0, leftover_tiles_dict[letter] - count)
+                original_count = leftover_tiles_dict[letter]
+                leftover_tiles_dict[letter] = max(0, original_count - used_count)
+                logger.debug(f"Letter {letter}: {original_count} - {used_count} = {leftover_tiles_dict[letter]}")
 
         # Remove tiles with 0 count
         leftover_tiles_dict = {k: v for k, v in leftover_tiles_dict.items() if v > 0}
+
+        logger.debug(f"Leftover tiles after base phrase: {leftover_tiles_dict}")
+        logger.debug(f"Total leftover tiles: {sum(leftover_tiles_dict.values())}")
 
         if not leftover_tiles_dict:
             logger.debug("No leftover tiles for inspiration words")
@@ -171,6 +212,13 @@ class WordDictionary:
         # Create temporary tile inventory for leftover tiles
         leftover_tiles = TileInventory(tiles=leftover_tiles_dict)
 
+        # Get buildable words from leftovers (with detailed logging)
+        buildable_words = self.get_buildable_words(leftover_tiles, min_score=min_score, max_words=200)
+        logger.debug(f"Found {len(buildable_words)} buildable words from leftovers (min_score={min_score})")
+
+        if buildable_words:
+            logger.debug(f"Top 10 buildable leftover words: {buildable_words[:10]}")
+
         # Get inspiration words from leftovers
         inspiration = self.get_inspiration_words(
             leftover_tiles,
@@ -178,8 +226,7 @@ class WordDictionary:
             min_score=min_score
         )
 
-        logger.debug(f"Leftover tiles: {leftover_tiles_dict}")
-        logger.debug(f"Leftover inspiration words: {inspiration}")
+        logger.debug(f"Final leftover inspiration words: {inspiration}")
 
         return inspiration
 
