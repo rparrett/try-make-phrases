@@ -447,21 +447,31 @@ ORIGINAL PHRASE TO IMPROVE:
         """Check if a string looks like a valid phrase."""
         # Must contain letters
         if not re.search(r"[a-zA-Z]", phrase):
+            self.logger.debug(f"Rejected '{phrase}': No letters found")
             return False
 
         # Reasonable length
-        if len(phrase) < 3 or len(phrase) > 50:
+        if len(phrase) < 3 or len(phrase) > 100:
+            self.logger.debug(
+                f"Rejected '{phrase}': Length {len(phrase)} not between 3-100"
+            )
             return False
 
         # Should have at least one space (multi-word phrase) or be a compound word
         if " " not in phrase and len(phrase) < 8:
+            self.logger.debug(f"Rejected '{phrase}': No spaces and length < 8")
             return False
 
         # Shouldn't have too many special characters
-        special_count = len(re.findall(r"[^a-zA-Z\s\'\-\.]", phrase))
+        special_chars = re.findall(r"[^a-zA-Z\s\'\-\.]", phrase)
+        special_count = len(special_chars)
         if special_count > 2:
+            self.logger.debug(
+                f"Rejected '{phrase}': Too many special chars ({special_count}): {special_chars}"
+            )
             return False
 
+        self.logger.debug(f"Accepted '{phrase}': Passed all validation checks")
         return True
 
     def get_model_info(self) -> Dict[str, any]:
