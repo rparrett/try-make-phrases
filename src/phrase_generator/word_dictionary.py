@@ -142,7 +142,7 @@ class WordDictionary:
         logger.debug(f"Getting {count} inspiration words with min_score={min_score}")
         logger.debug(f"Available tiles for inspiration: {tiles.tiles}")
 
-        buildable = self.get_buildable_words(tiles, min_score=min_score, max_words=200)
+        buildable = self.get_buildable_words(tiles, min_score=min_score, max_words=4000)
 
         logger.debug(f"Found {len(buildable)} buildable words (min_score={min_score})")
 
@@ -229,7 +229,7 @@ class WordDictionary:
 
         # Get buildable words from leftovers (with detailed logging)
         buildable_words = self.get_buildable_words(
-            leftover_tiles, min_score=min_score, max_words=2000
+            leftover_tiles, min_score=min_score, max_words=4000
         )
         logger.debug(
             f"Found {len(buildable_words)} buildable words from leftovers (min_score={min_score})"

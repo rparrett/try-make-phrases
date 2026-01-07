@@ -149,7 +149,7 @@ class OllamaClient:
         # Get high-value inspiration words from dictionary
         word_dict = get_word_dictionary()
         inspiration_words = word_dict.get_inspiration_words(
-            tiles, count=15, min_score=6
+            tiles, count=15, min_score=8
         )
 
         inspiration_section = ""
@@ -372,7 +372,7 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
         # Get leftover tile inspiration words
         word_dict = get_word_dictionary()
         leftover_inspiration = word_dict.get_leftover_inspiration_words(
-            base_phrase, tiles, count=12, min_score=4
+            base_phrase, tiles, count=12, min_score=8
         )
 
         leftover_section = ""
@@ -394,7 +394,7 @@ IMPROVEMENT METHODS:
 - Swap words for higher-scoring ones: WINTER MORNING → WINTER EVENING
 - Add details: HOLIDAY CHEER → HOLIDAY CHEER AND JOY
 
-Generate {num_attempts} different improved versions. Improve the phrase for maximum Scrabble points. Try some different strategies, including just small improvements.
+Generate {num_attempts} different improved versions. Improve the phrase for maximum Scrabble points while retaining grammatical integrity. Prefer smaller tweaks and changes.
 
 IMPORTANT: Output one phrase per line in plaintext format. ONLY THE PHRASE ITSELF.
 

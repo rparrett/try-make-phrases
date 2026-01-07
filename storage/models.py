@@ -58,6 +58,8 @@ class GeneratedPhrase(BaseModel):
     generated_at: datetime = Field(default_factory=datetime.now)
     model_used: str = Field(default="llama2:7b", description="LLM model that generated this phrase")
     prompt_context: Optional[str] = None
+    consecutive_failed_improvements: int = Field(default=0, description="Number of consecutive failed improvement attempts")
+    children_created: int = Field(default=0, description="Total number of child phrases created from this phrase")
 
     def __str__(self) -> str:
         return f"{self.phrase} (Score: {self.score})"

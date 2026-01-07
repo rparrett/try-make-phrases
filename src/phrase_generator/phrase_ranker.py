@@ -185,6 +185,30 @@ class PhraseRanker:
         limit = min(len(phrase_scores), self.config.generation_batch_size)
         return [phrase for phrase, _, _ in phrase_scores[:limit]]
 
+    def get_improvable_phrases(self, limit: int = 10, max_failed_attempts: int = 5, max_children_created: int = 5) -> List[GeneratedPhrase]:
+        """Get phrases that can still be improved (haven't reached retirement thresholds)."""
+        try:
+            return self.db.get_improvable_phrases(limit, max_failed_attempts, max_children_created)
+        except DatabaseError as e:
+            raise RankingError(f"Failed to get improvable phrases: {e}")
+
+    def mark_improvement_success(self, phrase_id: int, children_count: int):
+        """Mark that an improvement attempt was successful (reset failure counter and add children count)."""
+        try:
+            self.db.reset_failed_improvements(phrase_id)
+            self.db.add_children_created(phrase_id, children_count)
+            self.logger.debug(f"Reset failure counter and added {children_count} children for phrase {phrase_id}")
+        except DatabaseError as e:
+            raise RankingError(f"Failed to mark improvement success: {e}")
+
+    def mark_improvement_failure(self, phrase_id: int):
+        """Mark that an improvement attempt failed (increment failure counter)."""
+        try:
+            self.db.increment_failed_improvement(phrase_id)
+            self.logger.debug(f"Incremented improvement failure counter for phrase {phrase_id}")
+        except DatabaseError as e:
+            raise RankingError(f"Failed to mark improvement failure: {e}")
+
     def _should_cleanup(self) -> bool:
         """Check if database cleanup is needed."""
         try:

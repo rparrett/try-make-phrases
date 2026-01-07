@@ -29,6 +29,10 @@ from src.phrase_generator.phrase_ranker import PhraseRanker, RankingError
 running = True
 generation_session: Optional[GenerationSession] = None
 
+# Strategy constants
+MAX_FAILED_IMPROVEMENT_ATTEMPTS = 5
+MAX_CHILDREN_CREATED = 5
+
 
 def signal_handler(sig, frame):
     """Handle graceful shutdown on SIGINT."""
@@ -141,66 +145,35 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
         Number of valid phrases generated
     """
     try:
-        # Get top phrases for potential improvement
-        top_phrases = ranker.get_top_phrases(5)
+        # New strategy: Check for improvable phrases first
+        improvable_phrases = ranker.get_improvable_phrases(10, MAX_FAILED_IMPROVEMENT_ATTEMPTS, MAX_CHILDREN_CREATED)
 
-        # Decide whether to do fresh generation or improvement
-        # After we have some phrases (3+), focus more on improvement since we now improve one phrase at a time
-        should_do_fresh = (
-            len(top_phrases) < 3 or    # Need more phrases to improve
-            iteration <= 2 or          # Bootstrap with fresh generation first
-            iteration % 3 == 0         # Every 3rd iteration, do fresh generation
-        )
+        # Only do fresh generation if no phrases are improvable
+        should_improve = len(improvable_phrases) > 0
+        should_do_fresh = not should_improve
 
-        should_improve = not should_do_fresh
+        logger.debug(f"Found {len(improvable_phrases)} improvable phrases. "
+                    f"Strategy: {'improvement' if should_improve else 'fresh generation'}")
 
         if should_improve:
-            # Improvement cycle: focus on single phrase with multiple attempts
-            improvement_strategy = iteration % 9  # Cycle through different strategies
+            # Improvement cycle: Select the best improvable phrase
+            import random
 
-            if improvement_strategy < 3:
-                # Strategy 1: Improve top-scoring phrases (33% of time)
-                base_phrase_object = top_phrases[0] if top_phrases else None
-                strategy_name = "top-scoring"
-            elif improvement_strategy < 6:
-                # Strategy 2: Improve recent phrases (33% of time)
-                recent_phrases = ranker.get_recent_phrases(3)  # Get truly recent phrases by date
-                base_phrase_object = recent_phrases[0] if recent_phrases else None
-                strategy_name = "recent"
-            else:
-                # Strategy 3: Improve mixed/diverse phrases (33% of time)
-                import random
-
-                # Get a mix and randomly select one
-                top_phrases_for_mix = ranker.get_top_phrases(5)
-                recent_phrases_for_mix = ranker.get_recent_phrases(5)
-                all_phrases_for_mix = ranker.get_phrase_history(20)  # Still score-based for broader pool
-
-                candidates = []
-                candidates.extend(top_phrases_for_mix[:2])  # Top 2 scorers
-                candidates.extend(recent_phrases_for_mix[:2])  # 2 recent
-                candidates.extend(all_phrases_for_mix[5:10])  # Some mid-range phrases
-
-                # Remove duplicates by ID
-                seen_ids = set()
-                unique_candidates = []
-                for phrase in candidates:
-                    if phrase.id not in seen_ids:
-                        unique_candidates.append(phrase)
-                        seen_ids.add(phrase.id)
-
-                base_phrase_object = random.choice(unique_candidates) if unique_candidates else None
-                strategy_name = "mixed"
+            # Prioritize higher-scoring improvable phrases, but add some randomness
+            base_phrase_object = improvable_phrases[0] if improvable_phrases else None
 
             if not base_phrase_object:
-                logger.warning("No phrase available for improvement")
+                logger.warning("No improvable phrase available")
                 return 0
 
             # Extract phrase and score for improvement tracking
             base_phrase = base_phrase_object.phrase
             original_score = base_phrase_object.score
+            base_phrase_id = base_phrase_object.id
 
-            logger.debug(f"Improving {strategy_name} phrase: '{base_phrase}' (score: {original_score})")
+            logger.debug(f"Improving phrase: '{base_phrase}' (score: {original_score}, "
+                        f"failed: {base_phrase_object.consecutive_failed_improvements}, "
+                        f"children: {base_phrase_object.children_created})")
 
             # Generate multiple attempts to improve this single phrase
             phrase_candidates = llm_client.improve_single_phrase(
@@ -212,7 +185,7 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
             # For statistics tracking, we need the original score repeated for each attempt
             original_scores = [original_score] * len(phrase_candidates) if phrase_candidates else [original_score]
 
-            cycle_type = f"improvement-{strategy_name}"
+            cycle_type = "improvement"
         else:
             # Fresh generation cycle: create new phrases
             context_phrases = ranker.get_context_phrases()
@@ -248,12 +221,44 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
             return 0
 
         # Add to ranker (validates, scores, and stores)
-        added_phrases = ranker.add_phrase_candidates(
-            phrase_candidates,
-            tiles,
-            llm_client.model_name,
-            f"{cycle_type.title()} generation"
-        )
+        if should_improve:
+            # For improvement cycles, pre-filter candidates to only include those better than parent
+            logger.debug(f"Pre-filtering {len(phrase_candidates)} improvement candidates against parent score {original_score}")
+
+            # First, validate and score the candidates without adding them
+            temp_phrases = []
+            for phrase in phrase_candidates:
+                is_valid, tiles_used, error = ranker.validator.validate_phrase(phrase, tiles)
+                if is_valid:
+                    score = ranker.scorer.score_phrase_simple(phrase, tiles_used)
+                    if score >= ranker.config.min_score_threshold and score > original_score:
+                        # Only keep phrases that beat the parent AND meet minimum threshold
+                        generated_phrase = ranker.scorer.create_scored_phrase(
+                            phrase, tiles, tiles_used, llm_client.model_name,
+                            f"{cycle_type.title()} generation"
+                        )
+                        temp_phrases.append(generated_phrase)
+
+            # Add only the filtered (better) phrases to database
+            if temp_phrases:
+                phrase_ids = ranker.db.add_phrases_batch(temp_phrases)
+                added_phrases = []
+                for phrase, phrase_id in zip(temp_phrases, phrase_ids):
+                    if phrase_id:  # Some might be None due to duplicates
+                        phrase.id = phrase_id
+                        added_phrases.append(phrase)
+                logger.info(f"Added {len(added_phrases)} improved phrases to database (filtered from {len(phrase_candidates)} candidates)")
+            else:
+                added_phrases = []
+                logger.debug("No improvement candidates beat the parent score")
+        else:
+            # For fresh generation, use normal flow (no parent to beat)
+            added_phrases = ranker.add_phrase_candidates(
+                phrase_candidates,
+                tiles,
+                llm_client.model_name,
+                f"{cycle_type.title()} generation"
+            )
 
         # Track statistics
         successful_scores = [phrase.score for phrase in added_phrases]
@@ -268,6 +273,18 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                 original_scores=original_scores,
                 improved_scores=improved_scores
             )
+
+            # Track improvement success/failure for consecutive attempts strategy
+            if added_phrases:
+                # Since we pre-filtered, all added_phrases are guaranteed to be better than parent
+                children_count = len(added_phrases)
+                ranker.mark_improvement_success(base_phrase_id, children_count)
+                logger.debug(f"Improvement success! Created {children_count} better children from '{base_phrase}' "
+                            f"(scores: {[p.score for p in added_phrases]} vs original {original_score})")
+            else:
+                # No better phrases generated, mark as failure
+                ranker.mark_improvement_failure(base_phrase_id)
+                logger.debug(f"Improvement failed - no phrases generated from '{base_phrase}' beat original score {original_score}")
         else:
             # Track fresh generation statistics
             generation_session.update_fresh_stats(
@@ -553,13 +570,38 @@ def status(
             table.add_column("Rank", style="cyan")
             table.add_column("Phrase", style="green")
             table.add_column("Score", style="yellow")
+            table.add_column("Failed", style="red")
+            table.add_column("Children", style="bright_green")
+            table.add_column("Status", style="magenta")
             table.add_column("Generated", style="blue")
 
             for i, phrase in enumerate(top_phrases, 1):
+                # Color-code failed attempts: red if high, yellow if medium, green if low
+                failed_attempts = phrase.consecutive_failed_improvements
+                children_created = phrase.children_created
+
+                if failed_attempts >= 4:
+                    failed_color = "[red]"
+                elif failed_attempts >= 2:
+                    failed_color = "[yellow]"
+                else:
+                    failed_color = "[green]"
+
+                # Determine retirement status
+                if failed_attempts >= MAX_FAILED_IMPROVEMENT_ATTEMPTS:
+                    status = "[red]RETIRED-F[/red]"  # Retired due to failures
+                elif children_created >= MAX_CHILDREN_CREATED:
+                    status = "[yellow]RETIRED-C[/yellow]"  # Retired due to children created
+                else:
+                    status = "[green]ACTIVE[/green]"
+
                 table.add_row(
                     str(i),
                     phrase.phrase,
                     str(phrase.score),
+                    f"{failed_color}{failed_attempts}[/{failed_color[1:]}",
+                    f"[bright_green]{children_created}[/bright_green]",
+                    status,
                     phrase.generated_at.strftime("%m/%d %H:%M")
                 )
 

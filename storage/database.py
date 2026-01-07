@@ -40,9 +40,37 @@ class PhraseDatabase:
                     tiles_used TEXT NOT NULL,  -- JSON encoded
                     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     model_used TEXT DEFAULT 'llama2:7b',
-                    prompt_context TEXT
+                    prompt_context TEXT,
+                    consecutive_failed_improvements INTEGER DEFAULT 0,
+                    children_created INTEGER DEFAULT 0
                 )
             """)
+
+            # Add the new columns to existing tables (migration)
+            try:
+                conn.execute("ALTER TABLE phrases ADD COLUMN consecutive_failed_improvements INTEGER DEFAULT 0")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore
+                pass
+
+            try:
+                conn.execute("ALTER TABLE phrases ADD COLUMN children_created INTEGER DEFAULT 0")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore
+                pass
+
+            # Migrate data from old column name if it exists
+            try:
+                # Check if old column exists
+                cursor = conn.execute("PRAGMA table_info(phrases)")
+                columns = [row[1] for row in cursor.fetchall()]
+                if 'total_successful_improvements' in columns and 'children_created' in columns:
+                    # Copy data from old column to new column
+                    conn.execute("UPDATE phrases SET children_created = total_successful_improvements WHERE children_created = 0")
+                    conn.commit()
+            except sqlite3.OperationalError:
+                # Migration failed, ignore
+                pass
 
             # Generation sessions table
             conn.execute("""
@@ -80,15 +108,17 @@ class PhraseDatabase:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute("""
-                    INSERT INTO phrases (phrase, score, tiles_used, generated_at, model_used, prompt_context)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO phrases (phrase, score, tiles_used, generated_at, model_used, prompt_context, consecutive_failed_improvements, children_created)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     phrase.phrase,
                     phrase.score,
                     json.dumps(phrase.tiles_used),
                     phrase.generated_at,
                     phrase.model_used,
-                    phrase.prompt_context
+                    phrase.prompt_context,
+                    phrase.consecutive_failed_improvements,
+                    phrase.children_created
                 ))
                 phrase_id = cursor.lastrowid
                 conn.commit()
@@ -110,15 +140,17 @@ class PhraseDatabase:
                 for phrase in phrases:
                     try:
                         cursor = conn.execute("""
-                            INSERT INTO phrases (phrase, score, tiles_used, generated_at, model_used, prompt_context)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO phrases (phrase, score, tiles_used, generated_at, model_used, prompt_context, consecutive_failed_improvements, children_created)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """, (
                             phrase.phrase,
                             phrase.score,
                             json.dumps(phrase.tiles_used),
                             phrase.generated_at,
                             phrase.model_used,
-                            phrase.prompt_context
+                            phrase.prompt_context,
+                            phrase.consecutive_failed_improvements,
+                            phrase.children_created
                         ))
                         phrase_ids.append(cursor.lastrowid)
                     except sqlite3.IntegrityError:
@@ -144,6 +176,20 @@ class PhraseDatabase:
 
                 phrases = []
                 for row in rows:
+                    # Handle backward compatibility for the new columns
+                    try:
+                        consecutive_failed_improvements = row['consecutive_failed_improvements'] if 'consecutive_failed_improvements' in row.keys() else 0
+                    except (KeyError, IndexError):
+                        consecutive_failed_improvements = 0
+
+                    try:
+                        children_created = row['children_created'] if 'children_created' in row.keys() else 0
+                        # Fallback to old column name for backward compatibility
+                        if children_created == 0 and 'total_successful_improvements' in row.keys():
+                            children_created = row['total_successful_improvements']
+                    except (KeyError, IndexError):
+                        children_created = 0
+
                     phrases.append(GeneratedPhrase(
                         id=row['id'],
                         phrase=row['phrase'],
@@ -151,7 +197,9 @@ class PhraseDatabase:
                         tiles_used=json.loads(row['tiles_used']),
                         generated_at=datetime.fromisoformat(row['generated_at']),
                         model_used=row['model_used'],
-                        prompt_context=row['prompt_context']
+                        prompt_context=row['prompt_context'],
+                        consecutive_failed_improvements=consecutive_failed_improvements,
+                        children_created=children_created
                     ))
 
                 return phrases
@@ -172,6 +220,20 @@ class PhraseDatabase:
 
                 phrases = []
                 for row in rows:
+                    # Handle backward compatibility for the new columns
+                    try:
+                        consecutive_failed_improvements = row['consecutive_failed_improvements'] if 'consecutive_failed_improvements' in row.keys() else 0
+                    except (KeyError, IndexError):
+                        consecutive_failed_improvements = 0
+
+                    try:
+                        children_created = row['children_created'] if 'children_created' in row.keys() else 0
+                        # Fallback to old column name for backward compatibility
+                        if children_created == 0 and 'total_successful_improvements' in row.keys():
+                            children_created = row['total_successful_improvements']
+                    except (KeyError, IndexError):
+                        children_created = 0
+
                     phrases.append(GeneratedPhrase(
                         id=row['id'],
                         phrase=row['phrase'],
@@ -179,7 +241,9 @@ class PhraseDatabase:
                         tiles_used=json.loads(row['tiles_used']),
                         generated_at=datetime.fromisoformat(row['generated_at']),
                         model_used=row['model_used'],
-                        prompt_context=row['prompt_context']
+                        prompt_context=row['prompt_context'],
+                        consecutive_failed_improvements=consecutive_failed_improvements,
+                        children_created=children_created
                     ))
 
                 return phrases
@@ -289,6 +353,94 @@ class PhraseDatabase:
 
         except Exception as e:
             raise DatabaseError(f"Failed to cleanup phrases: {e}")
+
+    def get_improvable_phrases(self, limit: int = 10, max_failed_attempts: int = 5, max_children_created: int = 5) -> List[GeneratedPhrase]:
+        """Get phrases that can still be improved (haven't reached retirement thresholds)."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute("""
+                    SELECT * FROM phrases
+                    WHERE consecutive_failed_improvements < ?
+                    AND children_created < ?
+                    ORDER BY score DESC, generated_at DESC
+                    LIMIT ?
+                """, (max_failed_attempts, max_children_created, limit)).fetchall()
+
+                phrases = []
+                for row in rows:
+                    # Handle backward compatibility for the new columns
+                    try:
+                        consecutive_failed_improvements = row['consecutive_failed_improvements'] if 'consecutive_failed_improvements' in row.keys() else 0
+                    except (KeyError, IndexError):
+                        consecutive_failed_improvements = 0
+
+                    try:
+                        children_created = row['children_created'] if 'children_created' in row.keys() else 0
+                        # Fallback to old column name for backward compatibility
+                        if children_created == 0 and 'total_successful_improvements' in row.keys():
+                            children_created = row['total_successful_improvements']
+                    except (KeyError, IndexError):
+                        children_created = 0
+
+                    phrases.append(GeneratedPhrase(
+                        id=row['id'],
+                        phrase=row['phrase'],
+                        score=row['score'],
+                        tiles_used=json.loads(row['tiles_used']),
+                        generated_at=datetime.fromisoformat(row['generated_at']),
+                        model_used=row['model_used'],
+                        prompt_context=row['prompt_context'],
+                        consecutive_failed_improvements=consecutive_failed_improvements,
+                        children_created=children_created
+                    ))
+
+                return phrases
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to get improvable phrases: {e}")
+
+    def increment_failed_improvement(self, phrase_id: int):
+        """Increment the consecutive failed improvements counter for a phrase."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("""
+                    UPDATE phrases
+                    SET consecutive_failed_improvements = consecutive_failed_improvements + 1
+                    WHERE id = ?
+                """, (phrase_id,))
+                conn.commit()
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to increment failed improvement counter: {e}")
+
+    def reset_failed_improvements(self, phrase_id: int):
+        """Reset the consecutive failed improvements counter to 0 for a phrase."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("""
+                    UPDATE phrases
+                    SET consecutive_failed_improvements = 0
+                    WHERE id = ?
+                """, (phrase_id,))
+                conn.commit()
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to reset failed improvement counter: {e}")
+
+    def add_children_created(self, phrase_id: int, count: int = 1):
+        """Add to the children created counter for a phrase."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("""
+                    UPDATE phrases
+                    SET children_created = children_created + ?
+                    WHERE id = ?
+                """, (count, phrase_id))
+                conn.commit()
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to increment children created counter: {e}")
 
     def start_generation_session(self, tiles_input: str) -> int:
         """Start a new generation session."""
