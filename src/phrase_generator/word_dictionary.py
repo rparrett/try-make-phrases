@@ -42,7 +42,7 @@ class WordDictionary:
 
             logger.info(f"Loading dictionary from {self.dictionary_path}")
 
-            with open(self.dictionary_path, 'r', encoding='utf-8') as f:
+            with open(self.dictionary_path, "r", encoding="utf-8") as f:
                 words = [line.strip().upper() for line in f if line.strip()]
 
             logger.info(f"Loaded {len(words)} words, scoring them...")
@@ -66,23 +66,28 @@ class WordDictionary:
                     self.words_by_score[score] = []
                 self.words_by_score[score].append(word)
 
-            logger.info(f"Scored {len(self.scored_words)} words. "
-                       f"Top score: {self.scored_words[0][1] if self.scored_words else 0}")
+            logger.info(
+                f"Scored {len(self.scored_words)} words. "
+                f"Top score: {self.scored_words[0][1] if self.scored_words else 0}"
+            )
 
             # Debug: Show some examples
             if self.scored_words:
                 logger.debug(f"Top 10 words by score: {self.scored_words[:10]}")
-                logger.debug(f"Score distribution sample: scores 20+: {len([w for w, s in self.scored_words if s >= 20])}, "
-                           f"15+: {len([w for w, s in self.scored_words if s >= 15])}, "
-                           f"10+: {len([w for w, s in self.scored_words if s >= 10])}, "
-                           f"5+: {len([w for w, s in self.scored_words if s >= 5])}")
+                logger.debug(
+                    f"Score distribution sample: scores 20+: {len([w for w, s in self.scored_words if s >= 20])}, "
+                    f"15+: {len([w for w, s in self.scored_words if s >= 15])}, "
+                    f"10+: {len([w for w, s in self.scored_words if s >= 10])}, "
+                    f"5+: {len([w for w, s in self.scored_words if s >= 5])}"
+                )
 
         except Exception as e:
             logger.error(f"Failed to load dictionary: {e}")
             self.scored_words = []
 
-    def get_buildable_words(self, tiles: TileInventory, min_score: int = 0,
-                           max_words: int = 100) -> List[Tuple[str, int]]:
+    def get_buildable_words(
+        self, tiles: TileInventory, min_score: int = 0, max_words: int = 100
+    ) -> List[Tuple[str, int]]:
         """
         Get words that can be built with available tiles.
 
@@ -112,14 +117,17 @@ class WordDictionary:
                 if len(buildable_words) >= max_words:
                     break
 
-        logger.debug(f"Buildable words search: checked {checked_count} words, "
-                    f"skipped {skipped_low_score} low-scoring, "
-                    f"found {len(buildable_words)} buildable")
+        logger.debug(
+            f"Buildable words search: checked {checked_count} words, "
+            f"skipped {skipped_low_score} low-scoring, "
+            f"found {len(buildable_words)} buildable"
+        )
 
         return buildable_words
 
-    def get_inspiration_words(self, tiles: TileInventory, count: int = 5,
-                            min_score: int = 5) -> List[str]:
+    def get_inspiration_words(
+        self, tiles: TileInventory, count: int = 5, min_score: int = 5
+    ) -> List[str]:
         """
         Get random high-scoring words for LLM inspiration.
 
@@ -150,13 +158,17 @@ class WordDictionary:
         top_half_count = max(1, len(buildable) // 2)
         top_words = buildable[:top_half_count]
 
-        logger.debug(f"Taking top {top_half_count} words from {len(buildable)} buildable words")
+        logger.debug(
+            f"Taking top {top_half_count} words from {len(buildable)} buildable words"
+        )
 
         # Randomly sample from the top words
         sample_count = min(count, len(top_words))
 
         if len(top_words) < sample_count:
-            logger.debug(f"Warning: Only {len(top_words)} top words available, requested {sample_count}")
+            logger.debug(
+                f"Warning: Only {len(top_words)} top words available, requested {sample_count}"
+            )
 
         sampled = random.sample(top_words, sample_count)
 
@@ -165,8 +177,9 @@ class WordDictionary:
 
         return words
 
-    def get_leftover_inspiration_words(self, base_phrase: str, tiles: TileInventory,
-                                     count: int = 3, min_score: int = 4) -> List[str]:
+    def get_leftover_inspiration_words(
+        self, base_phrase: str, tiles: TileInventory, count: int = 3, min_score: int = 4
+    ) -> List[str]:
         """
         Get inspiration words that can be built from leftover tiles after making base phrase.
 
@@ -197,7 +210,9 @@ class WordDictionary:
             if letter in leftover_tiles_dict:
                 original_count = leftover_tiles_dict[letter]
                 leftover_tiles_dict[letter] = max(0, original_count - used_count)
-                logger.debug(f"Letter {letter}: {original_count} - {used_count} = {leftover_tiles_dict[letter]}")
+                logger.debug(
+                    f"Letter {letter}: {original_count} - {used_count} = {leftover_tiles_dict[letter]}"
+                )
 
         # Remove tiles with 0 count
         leftover_tiles_dict = {k: v for k, v in leftover_tiles_dict.items() if v > 0}
@@ -213,17 +228,19 @@ class WordDictionary:
         leftover_tiles = TileInventory(tiles=leftover_tiles_dict)
 
         # Get buildable words from leftovers (with detailed logging)
-        buildable_words = self.get_buildable_words(leftover_tiles, min_score=min_score, max_words=200)
-        logger.debug(f"Found {len(buildable_words)} buildable words from leftovers (min_score={min_score})")
+        buildable_words = self.get_buildable_words(
+            leftover_tiles, min_score=min_score, max_words=2000
+        )
+        logger.debug(
+            f"Found {len(buildable_words)} buildable words from leftovers (min_score={min_score})"
+        )
 
         if buildable_words:
             logger.debug(f"Top 10 buildable leftover words: {buildable_words[:10]}")
 
         # Get inspiration words from leftovers
         inspiration = self.get_inspiration_words(
-            leftover_tiles,
-            count=count,
-            min_score=min_score
+            leftover_tiles, count=count, min_score=min_score
         )
 
         logger.debug(f"Final leftover inspiration words: {inspiration}")
@@ -242,12 +259,13 @@ class WordDictionary:
             "max_score": max(scores) if scores else 0,
             "min_score": min(scores) if scores else 0,
             "avg_score": sum(scores) / len(scores) if scores else 0,
-            "top_10_words": self.scored_words[:10]
+            "top_10_words": self.scored_words[:10],
         }
 
 
 # Singleton instance for easy access
 _word_dictionary = None
+
 
 def get_word_dictionary() -> WordDictionary:
     """Get the global word dictionary instance."""
