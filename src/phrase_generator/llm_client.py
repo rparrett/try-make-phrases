@@ -6,7 +6,7 @@ import ollama
 from typing import List, Optional, Dict
 import re
 import time
-import logging
+from loguru import logger
 from storage.models import TileInventory, GeneratedPhrase
 
 
@@ -29,7 +29,7 @@ class OllamaClient:
         """
         self.model_name = model_name
         self.max_retries = max_retries
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
 
         # Test connection and model availability
         self._verify_model()
@@ -156,10 +156,14 @@ RULES:
 - Continue the following list of examples in the same format
 
 EXAMPLES:
+HAVING A HOLLY JOLLY CHRISTMAS
 WINTER MORNING SLEDDING ADVENTURE WITH FRIENDS
 COZY FIREPLACE ON SNOWY EVENING
 HOLIDAY CELEBRATION WITH FAMILY
 ICE SKATING ON FROZEN POND IN NEBRASKA
+MERRY XMAS YA FILTHY ANIMAL
+BRONZE MEDALIST AT THE WINTER OLYMPICS
+KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
 
 """
         return prompt
@@ -186,6 +190,9 @@ ICE SKATING ON FROZEN POND IN NEBRASKA
         """
         prompt = self.create_wintery_prompt(tiles, context_phrases, batch_size)
 
+        # Log the prompt for debugging
+        self.logger.debug(f"Fresh generation prompt:\n{prompt}")
+
         for attempt in range(self.max_retries):
             try:
                 self.logger.debug(f"Generating phrases (attempt {attempt + 1})")
@@ -202,6 +209,12 @@ ICE SKATING ON FROZEN POND IN NEBRASKA
                 )
 
                 raw_response = response["response"]
+
+                # Log raw LLM response for debugging
+                self.logger.debug(
+                    f"Raw LLM response for fresh generation:\n{raw_response}"
+                )
+
                 phrases = self._parse_phrase_response(raw_response)
 
                 if phrases:
@@ -340,7 +353,7 @@ IMPROVEMENT METHODS:
 - Swap a word for a higher-scoring one: WINTER MORNING -> WINTER EVENING
 - Add details: HOLIDAY CHEER → HOLIDAY CHEER AND JOY
 
-Make each phrase longer for maximum points.
+Make each phrase longer for maximum points, but remember they are to be phrases, not full sentences.
 
 Output format - one improved phrase per line, with no commentary or other annotations:
 
@@ -349,6 +362,9 @@ SNOWY PARK WITH CHILDREN SLEDDING
 WINTER MORNING SLEDDING ADVENTURE
 
 {batch_size} improved phrases:"""
+
+        # Log the improvement prompt for debugging
+        self.logger.debug(f"Improvement prompt:\n{prompt}")
 
         try:
             response = ollama.generate(
@@ -363,6 +379,12 @@ WINTER MORNING SLEDDING ADVENTURE
             )
 
             raw_response = response["response"]
+
+            # Log raw LLM response for debugging
+            self.logger.debug(
+                f"Raw LLM response for phrase improvement:\n{raw_response}"
+            )
+
             improved_phrases = self._parse_phrase_response(raw_response)
 
             if improved_phrases:
@@ -445,7 +467,6 @@ WINTER MORNING SLEDDING ADVENTURE
 # Testing and examples
 if __name__ == "__main__":
     # Test the LLM client
-    logging.basicConfig(level=logging.DEBUG)
 
     try:
         client = OllamaClient()

@@ -159,6 +159,34 @@ class PhraseDatabase:
         except Exception as e:
             raise DatabaseError(f"Failed to get top phrases: {e}")
 
+    def get_recent_phrases(self, limit: int = 10) -> List[GeneratedPhrase]:
+        """Get the most recently generated phrases by date."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute("""
+                    SELECT * FROM phrases
+                    ORDER BY generated_at DESC
+                    LIMIT ?
+                """, (limit,)).fetchall()
+
+                phrases = []
+                for row in rows:
+                    phrases.append(GeneratedPhrase(
+                        id=row['id'],
+                        phrase=row['phrase'],
+                        score=row['score'],
+                        tiles_used=json.loads(row['tiles_used']),
+                        generated_at=datetime.fromisoformat(row['generated_at']),
+                        model_used=row['model_used'],
+                        prompt_context=row['prompt_context']
+                    ))
+
+                return phrases
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to get recent phrases: {e}")
+
     def get_phrase_count(self) -> int:
         """Get total number of phrases in database."""
         try:

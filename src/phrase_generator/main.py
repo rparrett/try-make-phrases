@@ -51,17 +51,29 @@ def create_status_display(ranker: PhraseRanker, tiles: TileInventory,
     # Phrase Stats Panel
     try:
         stats = ranker.get_ranking_stats()
-        top_phrases = ranker.get_top_phrases(3)
+        top_phrases = ranker.get_top_phrases(8)  # Show more top phrases
+        recent_phrases = ranker.get_recent_phrases(6)  # Get 6 most recent by date
 
         stats_text = f"""
 Total Phrases: {stats['total_phrases']}
 Max Score: {stats['max_score']}
 Avg Score: {stats['avg_score']}
 
-Top Phrases:
+Top 8 Phrases:
 """
         for i, phrase in enumerate(top_phrases, 1):
             stats_text += f"{i}. {phrase.phrase} ({phrase.score})\n"
+
+        stats_text += "\nRecent Phrases:\n"
+        # Already newest first from database, no need to reverse
+        for i, phrase in enumerate(recent_phrases, 1):
+            # Show time ago for recent phrases
+            time_ago = datetime.now() - phrase.generated_at
+            if time_ago.total_seconds() < 3600:  # Less than an hour
+                time_str = f"{int(time_ago.total_seconds() // 60)}m ago"
+            else:
+                time_str = f"{int(time_ago.total_seconds() // 3600)}h ago"
+            stats_text += f"{i}. {phrase.phrase} ({phrase.score}) - {time_str}\n"
 
     except Exception as e:
         stats_text = f"Stats unavailable: {e}"
@@ -69,11 +81,24 @@ Top Phrases:
     # Session Stats Panel
     if session_stats:
         runtime = datetime.now() - session_stats.session_start
-        session_text = f"""
-Runtime: {runtime}
-Generated: {session_stats.phrases_generated}
-Valid: {session_stats.valid_phrases}
-Success Rate: {session_stats.valid_phrases / max(1, session_stats.phrases_generated) * 100:.1f}%
+        overall_attempts = session_stats.fresh_attempts + session_stats.improvement_attempts
+        overall_successes = session_stats.fresh_successes + session_stats.improvement_successes
+
+        session_text = f"""Runtime: {runtime}
+Generated: {overall_attempts} attempts, {overall_successes} valid
+
+Fresh Generation:
+  Attempts: {session_stats.fresh_attempts}
+  Successes: {session_stats.fresh_successes}
+  Rate: {session_stats.get_fresh_success_rate():.1f}%
+  Avg Score: {session_stats.fresh_avg_score:.1f}
+
+Improvements:
+  Attempts: {session_stats.improvement_attempts}
+  Successes: {session_stats.improvement_successes}
+  Rate: {session_stats.get_improvement_success_rate():.1f}%
+  Avg Score: {session_stats.improvement_avg_score:.1f}
+  Better than Original: {session_stats.get_improvement_effectiveness():.1f}%
 """
     else:
         session_text = "Session not started"
@@ -97,7 +122,7 @@ Success Rate: {session_stats.valid_phrases / max(1, session_stats.phrases_genera
 
 async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                           ranker: PhraseRanker, config: OptimizationConfig,
-                          console: Console, iteration: int) -> int:
+                          console: Console, iteration: int, generation_session: GenerationSession) -> int:
     """
     Run a single generation cycle (either fresh generation or improvement).
 
@@ -125,30 +150,44 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
 
             if improvement_strategy < 3:
                 # Strategy 1: Improve top-scoring phrases (33% of time)
-                base_phrases = [phrase.phrase for phrase in top_phrases[:3]]
+                base_phrase_objects = top_phrases[:3]
                 strategy_name = "top-scoring"
             elif improvement_strategy < 6:
                 # Strategy 2: Improve recent phrases (33% of time)
-                recent_phrases = ranker.get_phrase_history(15)[:5]  # Get recent phrases
-                base_phrases = [phrase.phrase for phrase in recent_phrases]
+                recent_phrases = ranker.get_recent_phrases(5)  # Get truly recent phrases by date
+                base_phrase_objects = recent_phrases
                 strategy_name = "recent"
             else:
-                # Strategy 3: Improve mixed/random phrases (33% of time)
-                all_phrases = ranker.get_phrase_history(50)  # Get broader sample
-                if len(all_phrases) >= 5:
-                    import random
-                    # Select a mix: some top, some random
-                    selected = all_phrases[:2]  # Top 2
-                    remaining = all_phrases[5:]  # Skip top 5, get from the rest
-                    if len(remaining) >= 3:
-                        selected.extend(random.sample(remaining, min(3, len(remaining))))
-                    else:
-                        selected.extend(remaining)
-                    base_phrases = [phrase.phrase for phrase in selected]
-                    strategy_name = "mixed"
-                else:
-                    base_phrases = [phrase.phrase for phrase in all_phrases]
-                    strategy_name = "all-available"
+                # Strategy 3: Improve mixed/diverse phrases (33% of time)
+                import random
+
+                # Get a true mix: some top-scoring, some recent, some random
+                top_phrases_for_mix = ranker.get_top_phrases(10)
+                recent_phrases_for_mix = ranker.get_recent_phrases(15)
+                all_phrases_for_mix = ranker.get_phrase_history(50)  # Still score-based for broader pool
+
+                selected = []
+
+                # Add 1-2 top scorers
+                if top_phrases_for_mix:
+                    selected.extend(top_phrases_for_mix[:2])
+
+                # Add 1-2 recent phrases (but avoid duplicates)
+                recent_to_add = [p for p in recent_phrases_for_mix if p.id not in [s.id for s in selected]]
+                selected.extend(recent_to_add[:2])
+
+                # Fill remaining with random selection from broader pool (avoid duplicates)
+                remaining_pool = [p for p in all_phrases_for_mix if p.id not in [s.id for s in selected]]
+                if remaining_pool and len(selected) < 5:
+                    additional_count = min(5 - len(selected), len(remaining_pool))
+                    selected.extend(random.sample(remaining_pool, additional_count))
+
+                base_phrase_objects = selected
+                strategy_name = "mixed"
+
+            # Extract phrases and scores for improvement tracking
+            base_phrases = [phrase.phrase for phrase in base_phrase_objects]
+            original_scores = [phrase.score for phrase in base_phrase_objects]
 
             logger.debug(f"Improving {len(base_phrases)} {strategy_name} phrases...")
 
@@ -171,9 +210,26 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
             )
 
             cycle_type = "fresh"
+            original_scores = []  # No originals for fresh generation
 
         if not phrase_candidates:
             logger.warning(f"No phrases generated from LLM ({cycle_type} cycle)")
+
+            # Track failed attempts
+            if should_improve:
+                generation_session.update_improvement_stats(
+                    attempts=config.generation_batch_size,
+                    successes=0,
+                    scores=[],
+                    original_scores=original_scores,
+                    improved_scores=[]
+                )
+            else:
+                generation_session.update_fresh_stats(
+                    attempts=config.generation_batch_size,
+                    successes=0,
+                    scores=[]
+                )
             return 0
 
         # Add to ranker (validates, scores, and stores)
@@ -183,6 +239,27 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
             llm_client.model_name,
             f"{cycle_type.title()} generation"
         )
+
+        # Track statistics
+        successful_scores = [phrase.score for phrase in added_phrases]
+
+        if should_improve:
+            # Track improvement statistics
+            improved_scores = successful_scores if successful_scores else [0] * len(original_scores)
+            generation_session.update_improvement_stats(
+                attempts=config.generation_batch_size,
+                successes=len(added_phrases),
+                scores=successful_scores,
+                original_scores=original_scores,
+                improved_scores=improved_scores
+            )
+        else:
+            # Track fresh generation statistics
+            generation_session.update_fresh_stats(
+                attempts=config.generation_batch_size,
+                successes=len(added_phrases),
+                scores=successful_scores
+            )
 
         logger.info(f"Generated {len(phrase_candidates)} {cycle_type} candidates, "
                    f"added {len(added_phrases)} valid phrases")
@@ -252,11 +329,7 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
 # Throttling removed per user request
 
                 # Run generation cycle (fresh or improvement)
-                valid_phrases = await generation_cycle(tiles, llm_client, ranker, config, console, iteration)
-
-                # Update session statistics
-                generation_session.phrases_generated += config.generation_batch_size
-                generation_session.valid_phrases += valid_phrases
+                valid_phrases = await generation_cycle(tiles, llm_client, ranker, config, console, iteration, generation_session)
 
                 if valid_phrases > 0:
                     top_phrases = ranker.get_top_phrases(1)
@@ -353,6 +426,15 @@ def generate(
 
     # Create logs directory
     Path("logs").mkdir(exist_ok=True)
+
+    # Configure separate logger for raw LLM responses
+    from loguru import logger as llm_logger
+    llm_logger.add("logs/llm_responses.log",
+                   rotation="1 day",
+                   retention="7 days",
+                   level="DEBUG",
+                   filter=lambda record: "Raw LLM response" in record["message"],
+                   format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
 
     # Configure standard Python logging to not interfere with TUI
     import logging

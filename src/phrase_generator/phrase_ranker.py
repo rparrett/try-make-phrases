@@ -2,7 +2,7 @@
 Phrase ranking and optimization system with SQLite persistence.
 """
 
-import logging
+from loguru import logger
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 
@@ -32,7 +32,7 @@ class PhraseRanker:
         self.scorer = ScrabbleScorer()
         self.validator = PhraseValidator()
         self.config = config or OptimizationConfig()
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
 
     def add_phrase_candidates(self, phrase_candidates: List[str], tiles: TileInventory,
                             model_used: str = "llama2:7b", prompt_context: Optional[str] = None) -> List[GeneratedPhrase]:
@@ -223,6 +223,13 @@ class PhraseRanker:
         except DatabaseError as e:
             raise RankingError(f"Failed to get phrase history: {e}")
 
+    def get_recent_phrases(self, limit: int = 10) -> List[GeneratedPhrase]:
+        """Get the most recently generated phrases by date."""
+        try:
+            return self.db.get_recent_phrases(limit)
+        except DatabaseError as e:
+            raise RankingError(f"Failed to get recent phrases: {e}")
+
     def find_similar_phrases(self, target_phrase: str, limit: int = 5) -> List[GeneratedPhrase]:
         """
         Find phrases similar to the target phrase.
@@ -252,7 +259,6 @@ class PhraseRanker:
 
 # Testing and examples
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
 
     from src.phrase_generator.tile_parser import parse_tile_string
 
