@@ -48,23 +48,23 @@ def create_status_display(ranker: PhraseRanker, tiles: TileInventory,
     """Create a rich layout for status display."""
     layout = Layout()
 
-    # Phrase Stats Panel
+    # Top Phrases Panel
     try:
         stats = ranker.get_ranking_stats()
-        top_phrases = ranker.get_top_phrases(8)  # Show more top phrases
-        recent_phrases = ranker.get_recent_phrases(6)  # Get 6 most recent by date
+        top_phrases = ranker.get_top_phrases(12)  # Show up to 12 top phrases
 
-        stats_text = f"""
-Total Phrases: {stats['total_phrases']}
-Max Score: {stats['max_score']}
-Avg Score: {stats['avg_score']}
-
-Top 8 Phrases:
-"""
+        top_text = "Top Phrases:\n"
         for i, phrase in enumerate(top_phrases, 1):
-            stats_text += f"{i}. {phrase.phrase} ({phrase.score})\n"
+            top_text += f"{i}. {phrase.phrase} ({phrase.score})\n"
 
-        stats_text += "\nRecent Phrases:\n"
+    except Exception as e:
+        top_text = f"Top phrases unavailable: {e}"
+
+    # Recent Phrases Panel
+    try:
+        recent_phrases = ranker.get_recent_phrases(12)  # Get up to 12 most recent by date
+
+        recent_text = "Recent Phrases:\n"
         # Already newest first from database, no need to reverse
         for i, phrase in enumerate(recent_phrases, 1):
             # Show time ago for recent phrases
@@ -73,10 +73,10 @@ Top 8 Phrases:
                 time_str = f"{int(time_ago.total_seconds() // 60)}m ago"
             else:
                 time_str = f"{int(time_ago.total_seconds() // 3600)}h ago"
-            stats_text += f"{i}. {phrase.phrase} ({phrase.score}) - {time_str}\n"
+            recent_text += f"{i}. {phrase.phrase} ({phrase.score}) - {time_str}\n"
 
     except Exception as e:
-        stats_text = f"Stats unavailable: {e}"
+        recent_text = f"Recent phrases unavailable: {e}"
 
     # Session Stats Panel
     if session_stats:
@@ -103,18 +103,26 @@ Improvements:
     else:
         session_text = "Session not started"
 
-    # Tiles Panel
-    tile_text = f"Total: {sum(tiles.tiles.values())} tiles\n"
-    sorted_tiles = sorted(tiles.tiles.items())
-    for i in range(0, len(sorted_tiles), 6):  # 6 tiles per line
-        line_tiles = sorted_tiles[i:i+6]
-        tile_text += " ".join([f"{letter}×{count}" if count > 1 else letter
-                              for letter, count in line_tiles]) + "\n"
+    # Overall Panel (combines stats and tiles)
+    try:
+        sorted_tiles = sorted(tiles.tiles.items())
+        total_tiles = sum(tiles.tiles.values())
+        unique_tiles = len(sorted_tiles)
+
+        overall_text = f"""Total Phrases: {stats['total_phrases']} | Max Score: {stats['max_score']}
+
+{total_tiles} tiles ({unique_tiles} unique)
+"""
+        overall_text += ", ".join([f"[cyan]{count}[/cyan][green]{letter}[/green]" if count > 1 else f"[green]{letter}[/green]"
+                                 for letter, count in sorted_tiles])
+    except Exception as e:
+        overall_text = f"Overall stats unavailable: {e}"
 
     layout.split_column(
-        Panel(stats_text, title="Phrase Statistics"),
-        Panel(session_text, title="Current Session"),
-        Panel(tile_text, title="Available Tiles")
+        Layout(Panel(top_text, title="Top Phrases"), ratio=4),
+        Layout(Panel(recent_text, title="Recent Phrases"), ratio=4),
+        Layout(Panel(session_text, title="Current Session"), ratio=4),
+        Layout(Panel(overall_text, title="Overall"), ratio=2)
     )
 
     return layout
