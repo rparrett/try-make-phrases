@@ -155,7 +155,7 @@ class OllamaClient:
         inspiration_section = ""
         if inspiration_words:
             inspiration_section = f"""
-OPTIONAL HIGH VALUE WORDS FOR INSPIRATION:
+FEEL FREE TO USE THESE OPTIONAL HIGH VALUE WORDS FOR INSPIRATION:
 {" - ".join(inspiration_words)}
 """
 
@@ -378,7 +378,7 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
         leftover_section = ""
         if leftover_inspiration:
             leftover_section = f"""
-OPTIONAL HIGH VALUE WORDS FOR INSPIRATION:
+FEEL FREE TO USE THESE OPTIONAL HIGH VALUE WORDS FOR INSPIRATION:
 {" - ".join(leftover_inspiration)}
 """
 
