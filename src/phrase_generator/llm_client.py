@@ -119,29 +119,20 @@ class OllamaClient:
 
         tiles_display = " ".join(available_letters)
 
-        prompt = f"""You are creating winter and holiday-themed phrases using ONLY the following Scrabble tiles:
+        prompt = f"""Create winter-themed phrases using ONLY these Scrabble tiles: {tiles_display}
 
-🎯 AVAILABLE TILES: {tiles_display}
-(Note: _ represents blank tiles that can be any letter)
+RULES:
+- Use only the letters shown above (each letter limited to shown quantity)
+- Blank tiles (_) can be any letter
+- Spaces and punctuation are free
+- Create 4-8 word phrases for maximum points
+- Focus on winter, snow, holiday themes
 
-⚠️ CRITICAL RULES:
-1. Use ONLY the letters shown above (each letter can be used up to the number of times shown)
-2. BEFORE writing each phrase, check that ALL letters are available in the tiles
-3. Blank tiles (_) can represent any letter but are worth 0 points
-4. Spaces, punctuation, and apostrophes are free (don't consume tiles)
-5. Create phrases that evoke winter, snow, holidays, or cold weather themes
-6. Aim for LONGER phrases (4-8+ words) to maximize Scrabble points
-7. Use as many tiles as possible - longer phrases score more points
-8. Double-check: Can you spell this phrase with the available letters?
-
-EXAMPLES of HIGH-SCORING winter phrases (using common letters):
-- WINTER STORIES AND MEMORIES
-- ICE SKATING ON THE POND
-- COZY READING BY THE FIRE
-- WINTER GAMES AND ACTIVITIES
-- SLEDDING DOWN THE SNOWY SLOPE
-- HOT CHOCOLATE AND COOKIES
-- DECORATING THE TREE FOR CHRISTMAS
+EXAMPLES:
+WINTER MORNING SLEDDING ADVENTURE
+COZY FIREPLACE ON SNOWY EVENING
+HOLIDAY CELEBRATION WITH FAMILY
+ICE SKATING ON FROZEN POND
 
 """
 
@@ -151,17 +142,14 @@ EXAMPLES of HIGH-SCORING winter phrases (using common letters):
                 prompt += f"- {phrase}\n"
 
         prompt += f"""
-🎯 CHALLENGE: Generate {batch_size} LONG winter-themed phrases using only the available tiles.
-📏 TARGET: 4-8+ words per phrase to maximize Scrabble points!
-✅ REQUIREMENT: Every letter must be available in the tiles shown above.
 
-Format your response as a simple list, one phrase per line:
+Generate {batch_size} winter phrases. Output format - one phrase per line:
 
 WINTER STORIES AND MEMORIES
 ICE SKATING ON THE POND
 COZY READING BY THE FIRE
 
-Your {batch_size} long, high-scoring phrases:"""
+{batch_size} phrases:"""
 
         return prompt
 
@@ -244,6 +232,11 @@ Your {batch_size} long, high-scoring phrases:"""
             line = re.sub(r'^[\d\.\-\*\+\s]*', '', line)
             line = line.strip()
 
+            # Remove explanatory text after dashes or descriptions
+            # Handle formats like: "PHRASE NAME" - This phrase adds...
+            if ' - ' in line:
+                line = line.split(' - ')[0].strip()
+
             # Remove word count annotations like "- 7 WORDS" or "(5 words)"
             line = re.sub(r'\s*-\s*\d+\s*WORDS?\s*$', '', line, flags=re.IGNORECASE)
             line = re.sub(r'\s*\(\d+\s*words?\)\s*$', '', line, flags=re.IGNORECASE)
@@ -255,11 +248,12 @@ Your {batch_size} long, high-scoring phrases:"""
             if line.startswith("'") and line.endswith("'"):
                 line = line[1:-1]
 
+            line = line.strip()
+
             # Skip if it looks like a model response artifact
             if any(skip_phrase in line.lower() for skip_phrase in [
-                'your', 'phrases', 'generate', 'winter', 'available', 'tiles',
-                'example', 'format', 'response', 'here are', 'great!', 'using only',
-                'long winter', 'high-scoring'
+                'your', 'phrases:', 'generate', 'available', 'tiles',
+                'format', 'response', 'here are', 'output', 'improved'
             ]):
                 continue
 
@@ -268,6 +262,86 @@ Your {batch_size} long, high-scoring phrases:"""
                 phrases.append(line.upper().strip())
 
         return phrases[:15]  # Limit to reasonable number
+
+    def improve_phrases(self, base_phrases: List[str], tiles: TileInventory,
+                       batch_size: int = 10) -> List[str]:
+        """
+        Improve existing phrases by adding words, replacing adjectives, etc.
+
+        Args:
+            base_phrases: Existing good phrases to improve
+            tiles: Available tiles for validation
+            batch_size: Number of improved phrases to generate
+
+        Returns:
+            List of improved phrase strings
+        """
+        if not base_phrases:
+            return []
+
+        # Convert tiles to a readable format
+        available_letters = []
+        for letter, count in sorted(tiles.tiles.items()):
+            if count == 1:
+                available_letters.append(letter)
+            else:
+                available_letters.append(f"{letter}×{count}")
+
+        tiles_display = " ".join(available_letters)
+
+        # Select phrases to improve (up to 3)
+        phrases_to_improve = base_phrases[:3]
+
+        prompt = f"""Improve these winter phrases by making them longer using ONLY these tiles: {tiles_display}
+
+ORIGINAL PHRASES TO IMPROVE:"""
+
+        for i, phrase in enumerate(phrases_to_improve, 1):
+            prompt += f"\n{i}. {phrase}"
+
+        prompt += f"""
+
+IMPROVEMENT METHODS:
+- Add adjectives: COLD BREEZE → COLD WINTER BREEZE
+- Add locations: SNOWY PARK → SNOWY PARK WITH TREES
+- Add activities: WINTER MORNING → WINTER MORNING SLEDDING
+- Add details: HOLIDAY CHEER → HOLIDAY CHEER AND JOY
+
+Make each phrase 5-10 words long for maximum points.
+
+Output format - one improved phrase per line:
+
+COLD WINTER BREEZE THROUGH THE TREES
+SNOWY PARK WITH CHILDREN SLEDDING
+WINTER MORNING SLEDDING ADVENTURE
+
+{batch_size} improved phrases:"""
+
+        try:
+            response = ollama.generate(
+                model=self.model_name,
+                prompt=prompt,
+                options={
+                    'temperature': 0.9,  # More creative for improvements
+                    'top_k': 40,
+                    'top_p': 0.9,
+                    'num_predict': 250,  # Allow longer responses
+                }
+            )
+
+            raw_response = response['response']
+            improved_phrases = self._parse_phrase_response(raw_response)
+
+            if improved_phrases:
+                self.logger.debug(f"Improved {len(improved_phrases)} phrases successfully")
+                return improved_phrases
+            else:
+                self.logger.warning(f"No valid improved phrases in response: {raw_response[:100]}...")
+                return []
+
+        except Exception as e:
+            self.logger.error(f"Phrase improvement failed: {e}")
+            return []
 
     def _is_valid_phrase_format(self, phrase: str) -> bool:
         """Check if a string looks like a valid phrase."""

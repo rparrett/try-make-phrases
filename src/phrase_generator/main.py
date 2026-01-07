@@ -97,27 +97,83 @@ Success Rate: {session_stats.valid_phrases / max(1, session_stats.phrases_genera
 
 async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                           ranker: PhraseRanker, config: OptimizationConfig,
-                          console: Console) -> int:
+                          console: Console, iteration: int) -> int:
     """
-    Run a single generation cycle.
+    Run a single generation cycle (either fresh generation or improvement).
+
+    Args:
+        iteration: Current iteration number (used to decide between fresh/improvement)
 
     Returns:
         Number of valid phrases generated
     """
     try:
-        # Get context phrases from previous successes
-        context_phrases = ranker.get_context_phrases()
+        # Get top phrases for potential improvement
+        top_phrases = ranker.get_top_phrases(5)
 
-        # Generate new phrases
-        logger.debug(f"Generating {config.generation_batch_size} phrases...")
-        phrase_candidates = llm_client.generate_phrases(
-            tiles=tiles,
-            context_phrases=context_phrases,
-            batch_size=config.generation_batch_size
+        # Decide whether to do fresh generation or improvement
+        # After we have some phrases (3+), alternate between fresh and improvement
+        should_improve = (
+            len(top_phrases) >= 3 and  # Have enough phrases to improve
+            iteration > 2 and          # Not in the first few iterations
+            iteration % 3 == 0         # Every 3rd iteration, do improvement
         )
 
+        if should_improve:
+            # Improvement cycle: enhance existing phrases with variety
+            improvement_strategy = iteration % 9  # Cycle through different strategies
+
+            if improvement_strategy < 3:
+                # Strategy 1: Improve top-scoring phrases (33% of time)
+                base_phrases = [phrase.phrase for phrase in top_phrases[:3]]
+                strategy_name = "top-scoring"
+            elif improvement_strategy < 6:
+                # Strategy 2: Improve recent phrases (33% of time)
+                recent_phrases = ranker.get_phrase_history(15)[:5]  # Get recent phrases
+                base_phrases = [phrase.phrase for phrase in recent_phrases]
+                strategy_name = "recent"
+            else:
+                # Strategy 3: Improve mixed/random phrases (33% of time)
+                all_phrases = ranker.get_phrase_history(50)  # Get broader sample
+                if len(all_phrases) >= 5:
+                    import random
+                    # Select a mix: some top, some random
+                    selected = all_phrases[:2]  # Top 2
+                    remaining = all_phrases[5:]  # Skip top 5, get from the rest
+                    if len(remaining) >= 3:
+                        selected.extend(random.sample(remaining, min(3, len(remaining))))
+                    else:
+                        selected.extend(remaining)
+                    base_phrases = [phrase.phrase for phrase in selected]
+                    strategy_name = "mixed"
+                else:
+                    base_phrases = [phrase.phrase for phrase in all_phrases]
+                    strategy_name = "all-available"
+
+            logger.debug(f"Improving {len(base_phrases)} {strategy_name} phrases...")
+
+            phrase_candidates = llm_client.improve_phrases(
+                base_phrases=base_phrases,
+                tiles=tiles,
+                batch_size=config.generation_batch_size
+            )
+
+            cycle_type = f"improvement-{strategy_name}"
+        else:
+            # Fresh generation cycle: create new phrases
+            context_phrases = ranker.get_context_phrases()
+            logger.debug(f"Generating {config.generation_batch_size} fresh phrases...")
+
+            phrase_candidates = llm_client.generate_phrases(
+                tiles=tiles,
+                context_phrases=context_phrases,
+                batch_size=config.generation_batch_size
+            )
+
+            cycle_type = "fresh"
+
         if not phrase_candidates:
-            logger.warning("No phrases generated from LLM")
+            logger.warning(f"No phrases generated from LLM ({cycle_type} cycle)")
             return 0
 
         # Add to ranker (validates, scores, and stores)
@@ -125,10 +181,10 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
             phrase_candidates,
             tiles,
             llm_client.model_name,
-            f"Context: {len(context_phrases)} phrases"
+            f"{cycle_type.title()} generation"
         )
 
-        logger.info(f"Generated {len(phrase_candidates)} candidates, "
+        logger.info(f"Generated {len(phrase_candidates)} {cycle_type} candidates, "
                    f"added {len(added_phrases)} valid phrases")
 
         return len(added_phrases)
@@ -194,8 +250,8 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
 
 # Throttling removed per user request
 
-                # Run generation cycle
-                valid_phrases = await generation_cycle(tiles, llm_client, ranker, config, console)
+                # Run generation cycle (fresh or improvement)
+                valid_phrases = await generation_cycle(tiles, llm_client, ranker, config, console, iteration)
 
                 # Update session statistics
                 generation_session.phrases_generated += config.generation_batch_size
