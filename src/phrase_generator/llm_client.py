@@ -253,6 +253,8 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
         lines = response.strip().split("\n")
 
         for line in lines:
+            original_line = line  # Keep for debugging
+
             # Clean the line
             line = line.strip()
 
@@ -261,8 +263,13 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
                 continue
 
             # Remove common prefixes/bullets and numbering
+            line_before_regex = line
             line = re.sub(r"^[\d\.\-\*\+\s]*", "", line)
             line = line.strip()
+
+            # Log the parsing steps for debugging
+            if line_before_regex != line:
+                self.logger.debug(f"Parsing: '{original_line}' → '{line_before_regex}' → '{line}'")
 
             # Remove explanatory text after dashes or descriptions
             # Handle formats like: "PHRASE NAME" - This phrase adds...
@@ -303,6 +310,14 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
             # Basic validation - should look like a phrase
             if self._is_valid_phrase_format(line):
                 phrases.append(line.upper().strip())
+            else:
+                self.logger.debug(f"Rejected phrase format: '{line}'")
+
+        # Log final extracted phrases
+        if phrases:
+            self.logger.debug(f"Successfully extracted {len(phrases)} phrases: {phrases}")
+        else:
+            self.logger.debug("No phrases extracted from response")
 
         return phrases[:15]  # Limit to reasonable number
 
