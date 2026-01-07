@@ -137,12 +137,14 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
         top_phrases = ranker.get_top_phrases(5)
 
         # Decide whether to do fresh generation or improvement
-        # After we have some phrases (3+), alternate between fresh and improvement
-        should_improve = (
-            len(top_phrases) >= 3 and  # Have enough phrases to improve
-            iteration > 2 and          # Not in the first few iterations
-            iteration % 3 == 0         # Every 3rd iteration, do improvement
+        # After we have some phrases (3+), focus more on improvement since we now improve one phrase at a time
+        should_do_fresh = (
+            len(top_phrases) < 3 or    # Need more phrases to improve
+            iteration <= 2 or          # Bootstrap with fresh generation first
+            iteration % 3 == 0         # Every 3rd iteration, do fresh generation
         )
+
+        should_improve = not should_do_fresh
 
         if should_improve:
             # Improvement cycle: focus on single phrase with multiple attempts

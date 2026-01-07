@@ -148,25 +148,29 @@ class OllamaClient:
 
         # Get high-value inspiration words from dictionary
         word_dict = get_word_dictionary()
-        inspiration_words = word_dict.get_inspiration_words(tiles, count=15, min_score=6)
+        inspiration_words = word_dict.get_inspiration_words(
+            tiles, count=15, min_score=6
+        )
 
         inspiration_section = ""
         if inspiration_words:
             inspiration_section = f"""
-HIGH-VALUE WORDS:
-{' - '.join(inspiration_words)}
+OPTIONAL HIGH VALUE WORDS FOR INSPIRATION:
+{" - ".join(inspiration_words)}
 """
 
-        prompt = f"""Create {batch_size} winter-themed phrases using tiles: {tiles_display}
+        prompt = f"""Create {batch_size} winter-themed phrases.
 
 RULES:
-- Use only the letters shown above (each letter limited to shown quantity)
-- Blank tiles (_) can be any letter
-- Spaces and punctuation are free
-- Create 4-10 word phrases for maximum points
+- Must not be full-blown sentences. Phrases only. Try for 4-10 words.
+- Spaces and punctuation are okay
 - Focus on winter, snow, holiday themes
+
 {inspiration_section}
-EXAMPLES:
+
+IMPORTANT: Output one phrase per line in plaintext format. ONLY THE PHRASE ITSELF.
+
+EXAMPLE FORMAT:
 HAVING A HOLLY JOLLY CHRISTMAS
 WINTER MORNING SLEDDING ADVENTURE WITH FRIENDS
 COZY FIREPLACE ON SNOWY EVENING
@@ -176,6 +180,7 @@ MERRY XMAS YA FILTHY ANIMAL
 BRONZE MEDALIST AT THE WINTER OLYMPICS
 KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
 
+{batch_size} new unique phrases:
 """
         return prompt
 
@@ -280,7 +285,9 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
 
             # Log the parsing steps for debugging
             if line_before_regex != line:
-                self.logger.debug(f"Parsing: '{original_line}' → '{line_before_regex}' → '{line}'")
+                self.logger.debug(
+                    f"Parsing: '{original_line}' → '{line_before_regex}' → '{line}'"
+                )
 
             # Remove explanatory text after dashes or descriptions
             # Handle formats like: "PHRASE NAME" - This phrase adds...
@@ -326,7 +333,9 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
 
         # Log final extracted phrases
         if phrases:
-            self.logger.debug(f"Successfully extracted {len(phrases)} phrases: {phrases}")
+            self.logger.debug(
+                f"Successfully extracted {len(phrases)} phrases: {phrases}"
+            )
         else:
             self.logger.debug("No phrases extracted from response")
 
@@ -369,14 +378,14 @@ KEANU REEVES AND UMA THURMAN CAROLING TOGETHER
         leftover_section = ""
         if leftover_inspiration:
             leftover_section = f"""
-AVAILABLE WORDS FROM LEFTOVER TILES:
-{' - '.join(leftover_inspiration)}
+OPTIONAL HIGH VALUE WORDS FOR INSPIRATION:
+{" - ".join(leftover_inspiration)}
 """
 
         prompt = f"""Improve this winter phrase by making {num_attempts} different variations using tiles: {tiles_display}
 
-ORIGINAL PHRASE TO IMPROVE: {base_phrase}
 {leftover_section}
+
 IMPROVEMENT METHODS:
 - Add adjectives: COLD BREEZE → COLD WINTER BREEZE
 - Add adverbs: COLD BREEZE → REMARKABLY COLD BREEZE
@@ -385,15 +394,15 @@ IMPROVEMENT METHODS:
 - Swap words for higher-scoring ones: WINTER MORNING → WINTER EVENING
 - Add details: HOLIDAY CHEER → HOLIDAY CHEER AND JOY
 
-Generate {num_attempts} different improved versions. Make each phrase longer for maximum Scrabble points.
+Generate {num_attempts} different improved versions. Improve the phrase for maximum Scrabble points. Try some different strategies, including just small improvements.
 
-Output format - one improved phrase per line, no numbering or commentary:
+IMPORTANT: Output one phrase per line in plaintext format. ONLY THE PHRASE ITSELF.
 
-COLD WINTER BREEZE THROUGH THE SNOWY FOREST
-REMARKABLY COLD WINTER MORNING WITH FROST
-WINTER MORNING SLEDDING ADVENTURE IN VERMONT
+ORIGINAL PHRASE TO IMPROVE:
+{base_phrase}
 
-{num_attempts} improved versions:"""
+{num_attempts} improved versions:
+"""
 
         # Log the improvement prompt for debugging
         self.logger.debug(f"Single phrase improvement prompt:\n{prompt}")
