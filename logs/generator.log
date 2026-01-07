@@ -233,3 +233,158 @@
 2026-01-06 16:18:50.362 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
 2026-01-06 16:18:50.559 | INFO     | __main__:generation_cycle:172 - Generated 3 candidates, added 2 valid phrases
 2026-01-06 16:18:50.561 | INFO     | __main__:main_generation_loop:299 - Session completed: 24 valid phrases from 20 generated
+2026-01-06 19:43:04.012 | INFO     | __main__:main_generation_loop:201 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 19:43:04.016 | INFO     | __main__:main_generation_loop:215 - Started generation session 9
+2026-01-06 19:43:04.016 | INFO     | __main__:main_generation_loop:216 - Using model: llama2:7b
+2026-01-06 19:43:09.478 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 3 valid phrases
+2026-01-06 19:43:13.419 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 2 valid phrases
+2026-01-06 19:43:18.253 | INFO     | __main__:generation_cycle:172 - Generated 8 candidates, added 5 valid phrases
+2026-01-06 19:43:23.252 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 3 valid phrases
+2026-01-06 19:43:28.258 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 2 valid phrases
+2026-01-06 19:43:33.004 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 3 valid phrases
+2026-01-06 19:43:38.258 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:43:43.267 | INFO     | __main__:generation_cycle:172 - Generated 8 candidates, added 2 valid phrases
+2026-01-06 19:43:48.268 | INFO     | __main__:generation_cycle:172 - Generated 5 candidates, added 2 valid phrases
+2026-01-06 19:43:53.320 | INFO     | __main__:generation_cycle:172 - Generated 8 candidates, added 2 valid phrases
+2026-01-06 19:43:58.279 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 1 valid phrases
+2026-01-06 19:44:03.275 | INFO     | __main__:generation_cycle:172 - Generated 5 candidates, added 1 valid phrases
+2026-01-06 19:44:08.127 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 5 valid phrases
+2026-01-06 19:44:13.277 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 2 valid phrases
+2026-01-06 19:44:18.254 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 2 valid phrases
+2026-01-06 19:44:23.270 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 2 valid phrases
+2026-01-06 19:44:28.499 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:44:33.094 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 1 valid phrases
+2026-01-06 19:44:38.428 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 2 valid phrases
+2026-01-06 19:44:43.270 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 3 valid phrases
+2026-01-06 19:44:48.498 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 2 valid phrases
+2026-01-06 19:44:53.278 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 4 valid phrases
+2026-01-06 19:44:58.288 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:45:03.282 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:45:08.284 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 0 valid phrases
+2026-01-06 19:45:13.291 | INFO     | __main__:generation_cycle:172 - Generated 8 candidates, added 2 valid phrases
+2026-01-06 19:45:18.513 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 3 valid phrases
+2026-01-06 19:45:23.514 | INFO     | __main__:generation_cycle:172 - Generated 5 candidates, added 0 valid phrases
+2026-01-06 19:45:28.287 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 3 valid phrases
+2026-01-06 19:45:33.286 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 1 valid phrases
+2026-01-06 19:45:38.296 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 1 valid phrases
+2026-01-06 19:45:43.079 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 3 valid phrases
+2026-01-06 19:45:48.302 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 2 valid phrases
+2026-01-06 19:45:53.318 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 4 valid phrases
+2026-01-06 19:45:58.318 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 2 valid phrases
+2026-01-06 19:46:03.315 | INFO     | __main__:generation_cycle:172 - Generated 5 candidates, added 3 valid phrases
+2026-01-06 19:46:08.314 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 0 valid phrases
+2026-01-06 19:46:13.322 | INFO     | __main__:generation_cycle:172 - Generated 7 candidates, added 1 valid phrases
+2026-01-06 19:46:18.316 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 0 valid phrases
+2026-01-06 19:46:23.320 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 0 valid phrases
+2026-01-06 19:46:28.325 | INFO     | __main__:generation_cycle:172 - Generated 8 candidates, added 1 valid phrases
+2026-01-06 19:46:32.990 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 19:46:33.322 | INFO     | __main__:generation_cycle:172 - Generated 6 candidates, added 2 valid phrases
+2026-01-06 19:46:34.918 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 19:46:35.121 | INFO     | __main__:signal_handler:36 - Received shutdown signal, stopping gracefully...
+2026-01-06 19:46:35.128 | INFO     | __main__:main_generation_loop:299 - Session completed: 77 valid phrases from 420 generated
+2026-01-06 19:46:43.985 | INFO     | __main__:main_generation_loop:160 - Parsed 21 tiles: {'W': 3, 'I': 1, 'N': 2, 'T': 1, 'E': 1, 'R': 1, 'S': 5, 'O': 2, 'C': 3, 'L': 1, 'D': 1}
+2026-01-06 19:46:43.987 | INFO     | __main__:main_generation_loop:174 - Started generation session 10
+2026-01-06 19:46:43.987 | INFO     | __main__:main_generation_loop:175 - Using model: llama2:7b
+2026-01-06 19:46:45.491 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:46:49.865 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:46:54.892 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:49:25.503 | INFO     | __main__:main_generation_loop:160 - Parsed 21 tiles: {'W': 3, 'I': 1, 'N': 2, 'T': 1, 'E': 1, 'R': 1, 'S': 5, 'O': 2, 'C': 3, 'L': 1, 'D': 1}
+2026-01-06 19:49:25.506 | INFO     | __main__:main_generation_loop:174 - Started generation session 11
+2026-01-06 19:49:25.506 | INFO     | __main__:main_generation_loop:175 - Using model: llama2:7b
+2026-01-06 19:49:26.408 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:49:29.431 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:49:32.343 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:50:20.459 | INFO     | __main__:main_generation_loop:160 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 19:50:20.462 | INFO     | __main__:main_generation_loop:174 - Started generation session 12
+2026-01-06 19:50:20.462 | INFO     | __main__:main_generation_loop:175 - Using model: llama2:7b
+2026-01-06 19:50:20.463 | DEBUG    | __main__:generation_cycle:112 - Generating 3 phrases...
+2026-01-06 19:50:21.916 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:50:21.916 | DEBUG    | __main__:main_generation_loop:214 - Iteration 1 completed in 1.5s, sleeping for 1.5s
+2026-01-06 19:50:23.465 | DEBUG    | __main__:generation_cycle:112 - Generating 3 phrases...
+2026-01-06 19:50:24.366 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 1 valid phrases
+2026-01-06 19:50:24.366 | DEBUG    | __main__:main_generation_loop:214 - Iteration 2 completed in 0.9s, sleeping for 2.1s
+2026-01-06 19:50:26.465 | DEBUG    | __main__:generation_cycle:112 - Generating 3 phrases...
+2026-01-06 19:50:27.272 | INFO     | __main__:generation_cycle:131 - Generated 2 candidates, added 0 valid phrases
+2026-01-06 19:50:27.272 | DEBUG    | __main__:main_generation_loop:214 - Iteration 3 completed in 0.8s, sleeping for 2.2s
+2026-01-06 19:50:29.468 | DEBUG    | __main__:generation_cycle:112 - Generating 3 phrases...
+2026-01-06 19:50:58.741 | INFO     | __main__:main_generation_loop:160 - Parsed 82 tiles: {'I': 9, 'E': 13, 'M': 2, 'K': 1, 'A': 10, 'R': 3, 'D': 5, 'J': 1, 'T': 2, 'S': 4, 'O': 6, 'B': 2, 'X': 1, 'N': 5, 'P': 5, 'C': 1, '_': 2, 'G': 4, 'L': 1, 'Z': 1, 'V': 1, 'W': 1, 'Y': 1, 'H': 1}
+2026-01-06 19:50:58.744 | INFO     | __main__:main_generation_loop:174 - Started generation session 13
+2026-01-06 19:50:58.744 | INFO     | __main__:main_generation_loop:175 - Using model: llama2:7b
+2026-01-06 19:50:58.746 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:01.069 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:51:01.069 | DEBUG    | __main__:main_generation_loop:214 - Iteration 1 completed in 2.3s, sleeping for 2.7s
+2026-01-06 19:51:03.749 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:05.938 | INFO     | __main__:generation_cycle:131 - Generated 8 candidates, added 1 valid phrases
+2026-01-06 19:51:05.938 | DEBUG    | __main__:main_generation_loop:214 - Iteration 2 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:08.752 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:10.942 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 1 valid phrases
+2026-01-06 19:51:10.942 | DEBUG    | __main__:main_generation_loop:214 - Iteration 3 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:13.751 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:15.945 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 3 valid phrases
+2026-01-06 19:51:15.946 | DEBUG    | __main__:main_generation_loop:214 - Iteration 4 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:18.752 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:20.946 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:51:20.946 | DEBUG    | __main__:main_generation_loop:214 - Iteration 5 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:23.756 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:25.953 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:51:25.953 | DEBUG    | __main__:main_generation_loop:214 - Iteration 6 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:28.754 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:30.954 | INFO     | __main__:generation_cycle:131 - Generated 8 candidates, added 1 valid phrases
+2026-01-06 19:51:30.954 | DEBUG    | __main__:main_generation_loop:214 - Iteration 7 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:33.756 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:35.956 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:51:35.956 | DEBUG    | __main__:main_generation_loop:214 - Iteration 8 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:38.759 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:40.956 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:51:40.956 | DEBUG    | __main__:main_generation_loop:214 - Iteration 9 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:43.758 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:45.954 | INFO     | __main__:generation_cycle:131 - Generated 6 candidates, added 0 valid phrases
+2026-01-06 19:51:45.954 | DEBUG    | __main__:main_generation_loop:214 - Iteration 10 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:48.764 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:50.955 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:51:50.955 | DEBUG    | __main__:main_generation_loop:214 - Iteration 11 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:51:53.763 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:51:55.815 | INFO     | __main__:generation_cycle:131 - Generated 8 candidates, added 4 valid phrases
+2026-01-06 19:51:55.815 | DEBUG    | __main__:main_generation_loop:214 - Iteration 12 completed in 2.1s, sleeping for 2.9s
+2026-01-06 19:51:58.765 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:00.962 | INFO     | __main__:generation_cycle:131 - Generated 5 candidates, added 0 valid phrases
+2026-01-06 19:52:00.962 | DEBUG    | __main__:main_generation_loop:214 - Iteration 13 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:03.768 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:05.960 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:52:05.960 | DEBUG    | __main__:main_generation_loop:214 - Iteration 14 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:08.766 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:10.973 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 2 valid phrases
+2026-01-06 19:52:10.973 | DEBUG    | __main__:main_generation_loop:214 - Iteration 15 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:13.768 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:15.963 | INFO     | __main__:generation_cycle:131 - Generated 5 candidates, added 0 valid phrases
+2026-01-06 19:52:15.963 | DEBUG    | __main__:main_generation_loop:214 - Iteration 16 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:18.772 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:20.975 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:52:20.975 | DEBUG    | __main__:main_generation_loop:214 - Iteration 17 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:23.770 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:25.970 | INFO     | __main__:generation_cycle:131 - Generated 5 candidates, added 2 valid phrases
+2026-01-06 19:52:25.970 | DEBUG    | __main__:main_generation_loop:214 - Iteration 18 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:28.771 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:30.976 | INFO     | __main__:generation_cycle:131 - Generated 5 candidates, added 0 valid phrases
+2026-01-06 19:52:30.976 | DEBUG    | __main__:main_generation_loop:214 - Iteration 19 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:33.776 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:35.977 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 0 valid phrases
+2026-01-06 19:52:35.977 | DEBUG    | __main__:main_generation_loop:214 - Iteration 20 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:38.776 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:40.983 | INFO     | __main__:generation_cycle:131 - Generated 6 candidates, added 1 valid phrases
+2026-01-06 19:52:40.983 | DEBUG    | __main__:main_generation_loop:214 - Iteration 21 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:43.779 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:45.692 | INFO     | __main__:generation_cycle:131 - Generated 8 candidates, added 2 valid phrases
+2026-01-06 19:52:45.693 | DEBUG    | __main__:main_generation_loop:214 - Iteration 22 completed in 1.9s, sleeping for 3.1s
+2026-01-06 19:52:48.777 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:50.975 | INFO     | __main__:generation_cycle:131 - Generated 5 candidates, added 1 valid phrases
+2026-01-06 19:52:50.975 | DEBUG    | __main__:main_generation_loop:214 - Iteration 23 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:53.779 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:52:55.939 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 4 valid phrases
+2026-01-06 19:52:55.939 | DEBUG    | __main__:main_generation_loop:214 - Iteration 24 completed in 2.2s, sleeping for 2.8s
+2026-01-06 19:52:58.783 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:53:00.710 | INFO     | __main__:generation_cycle:131 - Generated 7 candidates, added 2 valid phrases
+2026-01-06 19:53:00.711 | DEBUG    | __main__:main_generation_loop:214 - Iteration 25 completed in 1.9s, sleeping for 3.1s
+2026-01-06 19:53:03.782 | DEBUG    | __main__:generation_cycle:112 - Generating 10 phrases...
+2026-01-06 19:53:05.885 | INFO     | __main__:generation_cycle:131 - Generated 6 candidates, added 1 valid phrases
+2026-01-06 19:53:05.885 | DEBUG    | __main__:main_generation_loop:214 - Iteration 26 completed in 2.1s, sleeping for 2.9s

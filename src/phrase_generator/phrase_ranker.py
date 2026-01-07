@@ -70,7 +70,7 @@ class PhraseRanker:
                     self.logger.debug(f"Invalid phrase '{phrase}': {error}")
 
             if not valid_phrases:
-                self.logger.warning("No valid phrases from candidates")
+                self.logger.debug("No valid phrases from candidates")
                 return []
 
             # Sort by score before adding to database

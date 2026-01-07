@@ -4,7 +4,7 @@ Main orchestration loop for the Scrabble phrase generator.
 
 import asyncio
 import time
-import psutil
+# psutil import removed (system health monitoring removed)
 import signal
 import sys
 from datetime import datetime, timedelta
@@ -19,7 +19,7 @@ from rich.panel import Panel
 from rich.layout import Layout
 from loguru import logger
 
-from storage.models import TileInventory, OptimizationConfig, SystemHealth, GenerationSession
+from storage.models import TileInventory, OptimizationConfig, GenerationSession
 from storage.database import PhraseDatabase
 from src.phrase_generator.tile_parser import parse_tile_string, TileParseError
 from src.phrase_generator.llm_client import OllamaClient, LLMError
@@ -37,56 +37,16 @@ def signal_handler(sig, frame):
     running = False
 
 
-def get_system_health() -> SystemHealth:
-    """Get current system health metrics."""
-    try:
-        # CPU usage
-        cpu_percent = psutil.cpu_percent(interval=1.0)
-
-        # Memory usage
-        memory = psutil.virtual_memory()
-        memory_mb = memory.used / 1024 / 1024
-
-        # Temperature (try to get CPU temp on macOS)
-        temperature = None
-        try:
-            import subprocess
-            result = subprocess.run(
-                ['sysctl', '-n', 'machdep.xcpm.cpu_thermal_state'],
-                capture_output=True, text=True, timeout=2
-            )
-            if result.returncode == 0 and result.stdout.strip().isdigit():
-                thermal_state = int(result.stdout.strip())
-                # Convert thermal state to approximate temperature
-                temperature = 40 + (thermal_state * 10)  # Rough estimate
-        except Exception:
-            pass
-
-        return SystemHealth(
-            cpu_usage=cpu_percent,
-            memory_usage_mb=memory_mb,
-            temperature=temperature
-        )
-
-    except Exception as e:
-        logger.warning(f"Could not get system health: {e}")
-        return SystemHealth()
+# System health monitoring removed per user request
 
 
 # Throttling removed per user request
 
 
-def create_status_display(ranker: PhraseRanker, tiles: TileInventory, health: SystemHealth,
+def create_status_display(ranker: PhraseRanker, tiles: TileInventory,
                          session_stats: Optional[GenerationSession] = None) -> Layout:
     """Create a rich layout for status display."""
     layout = Layout()
-
-    # System Health Panel
-    health_text = f"""
-CPU: {health.cpu_usage:.1f}%
-Memory: {health.memory_usage_mb:.1f} MB
-Temperature: {health.temperature}°C if health.temperature else "N/A"
-"""
 
     # Phrase Stats Panel
     try:
@@ -127,7 +87,6 @@ Success Rate: {session_stats.valid_phrases / max(1, session_stats.phrases_genera
                               for letter, count in line_tiles]) + "\n"
 
     layout.split_column(
-        Panel(health_text, title="System Health"),
         Panel(stats_text, title="Phrase Statistics"),
         Panel(session_text, title="Current Session"),
         Panel(tile_text, title="Available Tiles")
@@ -219,19 +178,18 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
         iteration = 0
         last_status_update = time.time()
 
-        with Live(create_status_display(ranker, tiles, get_system_health(), generation_session),
+        with Live(create_status_display(ranker, tiles, generation_session),
                   console=console, refresh_per_second=0.5) as live:
 
             while running:
                 iteration += 1
                 cycle_start = time.time()
 
-                # Check system health
-                health = get_system_health()
+# System health checking removed per user request
 
                 # Update display every 10 seconds
                 if time.time() - last_status_update > 10:
-                    live.update(create_status_display(ranker, tiles, health, generation_session))
+                    live.update(create_status_display(ranker, tiles, generation_session))
                     last_status_update = time.time()
 
 # Throttling removed per user request
@@ -323,12 +281,25 @@ def generate(
 
     # Configure logging
     logger.remove()  # Remove default handler
-    log_level = "DEBUG" if verbose else "INFO"
-    logger.add(sys.stderr, level=log_level, format="<green>{time}</green> | <level>{level}</level> | {message}")
-    logger.add("logs/generator.log", rotation="1 day", retention="7 days", level="INFO")
+    log_level = "DEBUG" if verbose else "ERROR"  # Only show errors on screen unless verbose
+
+    # Only show logs on screen if in verbose mode, otherwise just log to file
+    if verbose:
+        logger.add(sys.stderr, level="DEBUG", format="<green>{time}</green> | <level>{level}</level> | {message}")
+    else:
+        # In non-verbose mode, only show critical errors on screen
+        logger.add(sys.stderr, level="ERROR", format="ERROR: {message}")
+
+    # Always log detailed info to file
+    logger.add("logs/generator.log", rotation="1 day", retention="7 days", level="DEBUG")
 
     # Create logs directory
     Path("logs").mkdir(exist_ok=True)
+
+    # Configure standard Python logging to not interfere with TUI
+    import logging
+    if not verbose:
+        logging.getLogger().setLevel(logging.ERROR)  # Suppress most standard logging
 
     config = OptimizationConfig(
         generation_batch_size=batch_size,
