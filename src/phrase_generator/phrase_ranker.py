@@ -14,13 +14,18 @@ from src.phrase_generator.phrase_validator import PhraseValidator
 
 class RankingError(Exception):
     """Exception raised for ranking operations."""
+
     pass
 
 
 class PhraseRanker:
     """Manages phrase ranking and optimization with database persistence."""
 
-    def __init__(self, db_path: str = "data/phrases.db", config: Optional[OptimizationConfig] = None):
+    def __init__(
+        self,
+        db_path: str = "data/phrases.db",
+        config: Optional[OptimizationConfig] = None,
+    ):
         """
         Initialize the phrase ranker.
 
@@ -34,8 +39,13 @@ class PhraseRanker:
         self.config = config or OptimizationConfig()
         self.logger = logger
 
-    def add_phrase_candidates(self, phrase_candidates: List[str], tiles: TileInventory,
-                            model_used: str = "llama2:7b", prompt_context: Optional[str] = None) -> List[GeneratedPhrase]:
+    def add_phrase_candidates(
+        self,
+        phrase_candidates: List[str],
+        tiles: TileInventory,
+        model_used: str = "llama2:7b",
+        prompt_context: Optional[str] = None,
+    ) -> List[GeneratedPhrase]:
         """
         Validate, score, and add phrase candidates to the ranking.
 
@@ -54,7 +64,9 @@ class PhraseRanker:
             # Validate and score all candidates
             valid_phrases = []
             for phrase in phrase_candidates:
-                is_valid, tiles_used, error = self.validator.validate_phrase(phrase, tiles)
+                is_valid, tiles_used, error = self.validator.validate_phrase(
+                    phrase, tiles
+                )
 
                 if is_valid:
                     # Check minimum score threshold
@@ -65,7 +77,9 @@ class PhraseRanker:
                         )
                         valid_phrases.append(generated_phrase)
                     else:
-                        self.logger.debug(f"Phrase '{phrase}' scored {score}, below threshold {self.config.min_score_threshold}")
+                        self.logger.debug(
+                            f"Phrase '{phrase}' scored {score}, below threshold {self.config.min_score_threshold}"
+                        )
                 else:
                     self.logger.debug(f"Invalid phrase '{phrase}': {error}")
 
@@ -133,16 +147,16 @@ class PhraseRanker:
             top_phrases = self.db.get_top_phrases(5)
 
             stats = {
-                'total_phrases': db_stats['total_phrases'],
-                'max_score': db_stats['max_score'],
-                'avg_score': db_stats['avg_score'],
-                'top_5_phrases': [f"{p.phrase} ({p.score})" for p in top_phrases],
-                'last_cleanup': getattr(self, '_last_cleanup', 'Never'),
-                'config': {
-                    'min_score_threshold': self.config.min_score_threshold,
-                    'max_phrases_stored': self.config.max_phrases_stored,
-                    'cleanup_threshold': self.config.cleanup_threshold
-                }
+                "total_phrases": db_stats["total_phrases"],
+                "max_score": db_stats["max_score"],
+                "avg_score": db_stats["avg_score"],
+                "top_5_phrases": [f"{p.phrase} ({p.score})" for p in top_phrases],
+                "last_cleanup": getattr(self, "_last_cleanup", "Never"),
+                "config": {
+                    "min_score_threshold": self.config.min_score_threshold,
+                    "max_phrases_stored": self.config.max_phrases_stored,
+                    "cleanup_threshold": self.config.cleanup_threshold,
+                },
             }
 
             return stats
@@ -150,7 +164,9 @@ class PhraseRanker:
         except DatabaseError as e:
             raise RankingError(f"Failed to get ranking stats: {e}")
 
-    def optimize_phrase_selection(self, candidates: List[str], tiles: TileInventory) -> List[str]:
+    def optimize_phrase_selection(
+        self, candidates: List[str], tiles: TileInventory
+    ) -> List[str]:
         """
         Select the most promising phrases from candidates based on various criteria.
 
@@ -174,7 +190,9 @@ class PhraseRanker:
                 efficiency = self.scorer.get_score_efficiency(score, tiles)
 
                 # Combined optimization score
-                optimization_score = score * (1.0 - difficulty * 0.3) * (1.0 + efficiency * 0.2)
+                optimization_score = (
+                    score * (1.0 - difficulty * 0.3) * (1.0 + efficiency * 0.2)
+                )
 
                 phrase_scores.append((phrase, score, optimization_score))
 
@@ -185,10 +203,17 @@ class PhraseRanker:
         limit = min(len(phrase_scores), self.config.generation_batch_size)
         return [phrase for phrase, _, _ in phrase_scores[:limit]]
 
-    def get_improvable_phrases(self, limit: int = 10, max_failed_attempts: int = 5, max_children_created: int = 5) -> List[GeneratedPhrase]:
+    def get_improvable_phrases(
+        self,
+        limit: int = 10,
+        max_failed_attempts: int = 5,
+        max_children_created: int = 5,
+    ) -> List[GeneratedPhrase]:
         """Get phrases that can still be improved (haven't reached retirement thresholds)."""
         try:
-            return self.db.get_improvable_phrases(limit, max_failed_attempts, max_children_created)
+            return self.db.get_improvable_phrases(
+                limit, max_failed_attempts, max_children_created
+            )
         except DatabaseError as e:
             raise RankingError(f"Failed to get improvable phrases: {e}")
 
@@ -197,7 +222,9 @@ class PhraseRanker:
         try:
             self.db.reset_failed_improvements(phrase_id)
             self.db.add_children_created(phrase_id, children_count)
-            self.logger.debug(f"Reset failure counter and added {children_count} children for phrase {phrase_id}")
+            self.logger.debug(
+                f"Reset failure counter and added {children_count} children for phrase {phrase_id}"
+            )
         except DatabaseError as e:
             raise RankingError(f"Failed to mark improvement success: {e}")
 
@@ -205,7 +232,9 @@ class PhraseRanker:
         """Mark that an improvement attempt failed (increment failure counter)."""
         try:
             self.db.increment_failed_improvement(phrase_id)
-            self.logger.debug(f"Incremented improvement failure counter for phrase {phrase_id}")
+            self.logger.debug(
+                f"Incremented improvement failure counter for phrase {phrase_id}"
+            )
         except DatabaseError as e:
             raise RankingError(f"Failed to mark improvement failure: {e}")
 
@@ -220,7 +249,9 @@ class PhraseRanker:
     def _cleanup_low_scoring_phrases(self):
         """Remove low-scoring phrases to maintain performance."""
         try:
-            deleted_count = self.db.cleanup_low_scoring_phrases(self.config.max_phrases_stored)
+            deleted_count = self.db.cleanup_low_scoring_phrases(
+                self.config.max_phrases_stored
+            )
             self._last_cleanup = datetime.now().isoformat()
             self.logger.info(f"Cleaned up {deleted_count} low-scoring phrases")
         except DatabaseError as e:
@@ -229,7 +260,9 @@ class PhraseRanker:
     def force_cleanup(self) -> int:
         """Force cleanup and return number of phrases removed."""
         try:
-            deleted_count = self.db.cleanup_low_scoring_phrases(self.config.max_phrases_stored)
+            deleted_count = self.db.cleanup_low_scoring_phrases(
+                self.config.max_phrases_stored
+            )
             self._last_cleanup = datetime.now().isoformat()
             return deleted_count
         except DatabaseError as e:
@@ -254,7 +287,9 @@ class PhraseRanker:
         except DatabaseError as e:
             raise RankingError(f"Failed to get recent phrases: {e}")
 
-    def find_similar_phrases(self, target_phrase: str, limit: int = 5) -> List[GeneratedPhrase]:
+    def find_similar_phrases(
+        self, target_phrase: str, limit: int = 5
+    ) -> List[GeneratedPhrase]:
         """
         Find phrases similar to the target phrase.
         Simple implementation based on shared words.
@@ -283,7 +318,6 @@ class PhraseRanker:
 
 # Testing and examples
 if __name__ == "__main__":
-
     from src.phrase_generator.tile_parser import parse_tile_string
 
     # Test with sample tiles
@@ -292,9 +326,7 @@ if __name__ == "__main__":
 
     # Initialize ranker with test database
     config = OptimizationConfig(
-        max_phrases_stored=20,
-        min_score_threshold=10,
-        cleanup_threshold=50
+        max_phrases_stored=20, min_score_threshold=10, cleanup_threshold=50
     )
 
     ranker = PhraseRanker("test_ranking.db", config)
@@ -308,7 +340,7 @@ if __name__ == "__main__":
         "WINTER WONDERLAND",
         "ICE AGE",  # Low score
         "FREEZING RAIN",
-        "WINTER STORM"
+        "WINTER STORM",
     ]
 
     print(f"\nTesting phrase ranking with {len(test_candidates)} candidates...")
@@ -335,6 +367,7 @@ if __name__ == "__main__":
 
     # Cleanup test database
     import os
+
     if os.path.exists("test_ranking.db"):
         os.remove("test_ranking.db")
     print("\nTest completed and cleaned up")

@@ -12,6 +12,7 @@ from config.scrabble_values import is_free_character
 
 class ValidationError(Exception):
     """Exception raised for validation errors."""
+
     pass
 
 
@@ -22,7 +23,9 @@ class PhraseValidator:
         """Initialize the validator."""
         self.logger = logging.getLogger(__name__)
 
-    def validate_phrase(self, phrase: str, tiles: TileInventory) -> Tuple[bool, Dict[str, int], str]:
+    def validate_phrase(
+        self, phrase: str, tiles: TileInventory
+    ) -> Tuple[bool, Dict[str, int], str]:
         """
         Validate that a phrase can be constructed from available tiles.
 
@@ -51,7 +54,9 @@ class PhraseValidator:
                 required_letters[char] += 1
 
             # Check if we can construct the phrase
-            can_construct, tiles_used = self._can_construct_with_blanks(required_letters, tiles)
+            can_construct, tiles_used = self._can_construct_with_blanks(
+                required_letters, tiles
+            )
 
             if can_construct:
                 return True, tiles_used, ""
@@ -63,8 +68,9 @@ class PhraseValidator:
             self.logger.error(f"Validation error for phrase '{phrase}': {e}")
             return False, {}, f"Validation error: {e}"
 
-    def _can_construct_with_blanks(self, required_letters: Counter,
-                                 tiles: TileInventory) -> Tuple[bool, Dict[str, int]]:
+    def _can_construct_with_blanks(
+        self, required_letters: Counter, tiles: TileInventory
+    ) -> Tuple[bool, Dict[str, int]]:
         """
         Check if phrase can be constructed, optimally using blank tiles.
 
@@ -96,20 +102,22 @@ class PhraseValidator:
                 blanks_needed += still_needed
 
         # Check if we have enough blank tiles
-        available_blanks = remaining_tiles.get('_', 0)
+        available_blanks = remaining_tiles.get("_", 0)
         if blanks_needed > available_blanks:
             return False, {}
 
         # Second pass: allocate blank tiles for remaining letters
         if blanks_needed > 0:
-            tiles_used['_'] = blanks_needed
+            tiles_used["_"] = blanks_needed
 
         return True, tiles_used
 
-    def _find_missing_letters(self, required_letters: Counter, tiles: TileInventory) -> str:
+    def _find_missing_letters(
+        self, required_letters: Counter, tiles: TileInventory
+    ) -> str:
         """Find which letters are missing for constructing the phrase."""
         missing = []
-        available_blanks = tiles.tiles.get('_', 0)
+        available_blanks = tiles.tiles.get("_", 0)
         total_shortage = 0
 
         for letter, needed in required_letters.items():
@@ -126,7 +134,9 @@ class PhraseValidator:
 
         return ", ".join(missing) if missing else "None"
 
-    def batch_validate_phrases(self, phrases: List[str], tiles: TileInventory) -> List[Tuple[str, bool, Dict[str, int], str]]:
+    def batch_validate_phrases(
+        self, phrases: List[str], tiles: TileInventory
+    ) -> List[Tuple[str, bool, Dict[str, int], str]]:
         """
         Validate multiple phrases at once.
 
@@ -145,7 +155,9 @@ class PhraseValidator:
 
         return results
 
-    def find_optimal_tile_usage(self, phrase: str, tiles: TileInventory) -> Optional[Dict[str, int]]:
+    def find_optimal_tile_usage(
+        self, phrase: str, tiles: TileInventory
+    ) -> Optional[Dict[str, int]]:
         """
         Find the optimal way to use tiles for a phrase (minimizing blank usage).
 
@@ -194,7 +206,7 @@ class PhraseValidator:
                 blanks_needed += max(0, count - available)
 
             # Difficulty increases with blank usage
-            if blanks_needed > tiles.tiles.get('_', 0):
+            if blanks_needed > tiles.tiles.get("_", 0):
                 return 1.0  # Impossible
 
             # Score based on proportion of blanks needed
@@ -224,7 +236,7 @@ if __name__ == "__main__":
         "HOLIDAY CHEER",
         "IMPOSSIBLE PHRASE WITH MISSING LETTERS",
         "COLD NIGHT",
-        "WINTER WONDERLAND"  # This should be challenging
+        "WINTER WONDERLAND",  # This should be challenging
     ]
 
     print("\nTesting phrases:")

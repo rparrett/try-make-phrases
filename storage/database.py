@@ -13,6 +13,7 @@ from storage.models import GeneratedPhrase, GenerationSession, OptimizationConfi
 
 class DatabaseError(Exception):
     """Exception raised for database operations."""
+
     pass
 
 
@@ -48,13 +49,17 @@ class PhraseDatabase:
 
             # Add the new columns to existing tables (migration)
             try:
-                conn.execute("ALTER TABLE phrases ADD COLUMN consecutive_failed_improvements INTEGER DEFAULT 0")
+                conn.execute(
+                    "ALTER TABLE phrases ADD COLUMN consecutive_failed_improvements INTEGER DEFAULT 0"
+                )
             except sqlite3.OperationalError:
                 # Column already exists, ignore
                 pass
 
             try:
-                conn.execute("ALTER TABLE phrases ADD COLUMN children_created INTEGER DEFAULT 0")
+                conn.execute(
+                    "ALTER TABLE phrases ADD COLUMN children_created INTEGER DEFAULT 0"
+                )
             except sqlite3.OperationalError:
                 # Column already exists, ignore
                 pass
@@ -64,9 +69,14 @@ class PhraseDatabase:
                 # Check if old column exists
                 cursor = conn.execute("PRAGMA table_info(phrases)")
                 columns = [row[1] for row in cursor.fetchall()]
-                if 'total_successful_improvements' in columns and 'children_created' in columns:
+                if (
+                    "total_successful_improvements" in columns
+                    and "children_created" in columns
+                ):
                     # Copy data from old column to new column
-                    conn.execute("UPDATE phrases SET children_created = total_successful_improvements WHERE children_created = 0")
+                    conn.execute(
+                        "UPDATE phrases SET children_created = total_successful_improvements WHERE children_created = 0"
+                    )
                     conn.commit()
             except sqlite3.OperationalError:
                 # Migration failed, ignore
@@ -86,9 +96,15 @@ class PhraseDatabase:
             """)
 
             # Create indexes for performance
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_phrase_score ON phrases(score DESC)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_phrase_generated ON phrases(generated_at DESC)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_session_start ON generation_sessions(session_start DESC)")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_phrase_score ON phrases(score DESC)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_phrase_generated ON phrases(generated_at DESC)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_session_start ON generation_sessions(session_start DESC)"
+            )
 
             conn.commit()
 
@@ -107,19 +123,22 @@ class PhraseDatabase:
         """
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.execute("""
+                cursor = conn.execute(
+                    """
                     INSERT INTO phrases (phrase, score, tiles_used, generated_at, model_used, prompt_context, consecutive_failed_improvements, children_created)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    phrase.phrase,
-                    phrase.score,
-                    json.dumps(phrase.tiles_used),
-                    phrase.generated_at,
-                    phrase.model_used,
-                    phrase.prompt_context,
-                    phrase.consecutive_failed_improvements,
-                    phrase.children_created
-                ))
+                """,
+                    (
+                        phrase.phrase,
+                        phrase.score,
+                        json.dumps(phrase.tiles_used),
+                        phrase.generated_at,
+                        phrase.model_used,
+                        phrase.prompt_context,
+                        phrase.consecutive_failed_improvements,
+                        phrase.children_created,
+                    ),
+                )
                 phrase_id = cursor.lastrowid
                 conn.commit()
                 return phrase_id
@@ -139,19 +158,22 @@ class PhraseDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 for phrase in phrases:
                     try:
-                        cursor = conn.execute("""
+                        cursor = conn.execute(
+                            """
                             INSERT INTO phrases (phrase, score, tiles_used, generated_at, model_used, prompt_context, consecutive_failed_improvements, children_created)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (
-                            phrase.phrase,
-                            phrase.score,
-                            json.dumps(phrase.tiles_used),
-                            phrase.generated_at,
-                            phrase.model_used,
-                            phrase.prompt_context,
-                            phrase.consecutive_failed_improvements,
-                            phrase.children_created
-                        ))
+                        """,
+                            (
+                                phrase.phrase,
+                                phrase.score,
+                                json.dumps(phrase.tiles_used),
+                                phrase.generated_at,
+                                phrase.model_used,
+                                phrase.prompt_context,
+                                phrase.consecutive_failed_improvements,
+                                phrase.children_created,
+                            ),
+                        )
                         phrase_ids.append(cursor.lastrowid)
                     except sqlite3.IntegrityError:
                         # Skip duplicates but continue with batch
@@ -168,39 +190,55 @@ class PhraseDatabase:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                rows = conn.execute("""
+                rows = conn.execute(
+                    """
                     SELECT * FROM phrases
                     ORDER BY score DESC, generated_at DESC
                     LIMIT ?
-                """, (limit,)).fetchall()
+                """,
+                    (limit,),
+                ).fetchall()
 
                 phrases = []
                 for row in rows:
                     # Handle backward compatibility for the new columns
                     try:
-                        consecutive_failed_improvements = row['consecutive_failed_improvements'] if 'consecutive_failed_improvements' in row.keys() else 0
+                        consecutive_failed_improvements = (
+                            row["consecutive_failed_improvements"]
+                            if "consecutive_failed_improvements" in row.keys()
+                            else 0
+                        )
                     except (KeyError, IndexError):
                         consecutive_failed_improvements = 0
 
                     try:
-                        children_created = row['children_created'] if 'children_created' in row.keys() else 0
+                        children_created = (
+                            row["children_created"]
+                            if "children_created" in row.keys()
+                            else 0
+                        )
                         # Fallback to old column name for backward compatibility
-                        if children_created == 0 and 'total_successful_improvements' in row.keys():
-                            children_created = row['total_successful_improvements']
+                        if (
+                            children_created == 0
+                            and "total_successful_improvements" in row.keys()
+                        ):
+                            children_created = row["total_successful_improvements"]
                     except (KeyError, IndexError):
                         children_created = 0
 
-                    phrases.append(GeneratedPhrase(
-                        id=row['id'],
-                        phrase=row['phrase'],
-                        score=row['score'],
-                        tiles_used=json.loads(row['tiles_used']),
-                        generated_at=datetime.fromisoformat(row['generated_at']),
-                        model_used=row['model_used'],
-                        prompt_context=row['prompt_context'],
-                        consecutive_failed_improvements=consecutive_failed_improvements,
-                        children_created=children_created
-                    ))
+                    phrases.append(
+                        GeneratedPhrase(
+                            id=row["id"],
+                            phrase=row["phrase"],
+                            score=row["score"],
+                            tiles_used=json.loads(row["tiles_used"]),
+                            generated_at=datetime.fromisoformat(row["generated_at"]),
+                            model_used=row["model_used"],
+                            prompt_context=row["prompt_context"],
+                            consecutive_failed_improvements=consecutive_failed_improvements,
+                            children_created=children_created,
+                        )
+                    )
 
                 return phrases
 
@@ -212,46 +250,64 @@ class PhraseDatabase:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                rows = conn.execute("""
+                rows = conn.execute(
+                    """
                     SELECT * FROM phrases
                     ORDER BY generated_at DESC
                     LIMIT ?
-                """, (limit,)).fetchall()
+                """,
+                    (limit,),
+                ).fetchall()
 
                 phrases = []
                 for row in rows:
                     # Handle backward compatibility for the new columns
                     try:
-                        consecutive_failed_improvements = row['consecutive_failed_improvements'] if 'consecutive_failed_improvements' in row.keys() else 0
+                        consecutive_failed_improvements = (
+                            row["consecutive_failed_improvements"]
+                            if "consecutive_failed_improvements" in row.keys()
+                            else 0
+                        )
                     except (KeyError, IndexError):
                         consecutive_failed_improvements = 0
 
                     try:
-                        children_created = row['children_created'] if 'children_created' in row.keys() else 0
+                        children_created = (
+                            row["children_created"]
+                            if "children_created" in row.keys()
+                            else 0
+                        )
                         # Fallback to old column name for backward compatibility
-                        if children_created == 0 and 'total_successful_improvements' in row.keys():
-                            children_created = row['total_successful_improvements']
+                        if (
+                            children_created == 0
+                            and "total_successful_improvements" in row.keys()
+                        ):
+                            children_created = row["total_successful_improvements"]
                     except (KeyError, IndexError):
                         children_created = 0
 
-                    phrases.append(GeneratedPhrase(
-                        id=row['id'],
-                        phrase=row['phrase'],
-                        score=row['score'],
-                        tiles_used=json.loads(row['tiles_used']),
-                        generated_at=datetime.fromisoformat(row['generated_at']),
-                        model_used=row['model_used'],
-                        prompt_context=row['prompt_context'],
-                        consecutive_failed_improvements=consecutive_failed_improvements,
-                        children_created=children_created
-                    ))
+                    phrases.append(
+                        GeneratedPhrase(
+                            id=row["id"],
+                            phrase=row["phrase"],
+                            score=row["score"],
+                            tiles_used=json.loads(row["tiles_used"]),
+                            generated_at=datetime.fromisoformat(row["generated_at"]),
+                            model_used=row["model_used"],
+                            prompt_context=row["prompt_context"],
+                            consecutive_failed_improvements=consecutive_failed_improvements,
+                            children_created=children_created,
+                        )
+                    )
 
                 return phrases
 
         except Exception as e:
             raise DatabaseError(f"Failed to get recent phrases: {e}")
 
-    def recalculate_scores_for_tileset(self, tiles, scorer, validator) -> Dict[str, int]:
+    def recalculate_scores_for_tileset(
+        self, tiles, scorer, validator
+    ) -> Dict[str, int]:
         """
         Recalculate all phrase scores for a new tile set.
         Remove phrases that cannot be constructed.
@@ -276,11 +332,13 @@ class PhraseDatabase:
                 score_changes = []
 
                 for row in rows:
-                    phrase_id = row['id']
-                    phrase_text = row['phrase']
+                    phrase_id = row["id"]
+                    phrase_text = row["phrase"]
 
                     # Check if phrase can be constructed with current tiles
-                    is_valid, tiles_used, error = validator.validate_phrase(phrase_text, tiles)
+                    is_valid, tiles_used, error = validator.validate_phrase(
+                        phrase_text, tiles
+                    )
 
                     if not is_valid:
                         # Remove phrases that can't be constructed
@@ -292,11 +350,14 @@ class PhraseDatabase:
                     new_score = scorer.score_phrase_simple(phrase_text, tiles_used)
 
                     # Update phrase with new score and tiles_used
-                    conn.execute("""
+                    conn.execute(
+                        """
                         UPDATE phrases
                         SET score = ?, tiles_used = ?
                         WHERE id = ?
-                    """, (new_score, json.dumps(tiles_used), phrase_id))
+                    """,
+                        (new_score, json.dumps(tiles_used), phrase_id),
+                    )
 
                     updated_count += 1
                     score_changes.append((phrase_text, new_score))
@@ -304,9 +365,9 @@ class PhraseDatabase:
                 conn.commit()
 
                 return {
-                    'updated_count': updated_count,
-                    'removed_count': removed_count,
-                    'score_changes': score_changes
+                    "updated_count": updated_count,
+                    "removed_count": removed_count,
+                    "score_changes": score_changes,
                 }
 
         except Exception as e:
@@ -326,11 +387,14 @@ class PhraseDatabase:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 # Get the score threshold for the Nth best phrase
-                threshold_score = conn.execute("""
+                threshold_score = conn.execute(
+                    """
                     SELECT score FROM phrases
                     ORDER BY score DESC
                     LIMIT 1 OFFSET ?
-                """, (keep_count - 1,)).fetchone()
+                """,
+                    (keep_count - 1,),
+                ).fetchone()
 
                 if threshold_score is None:
                     return 0  # Not enough phrases to clean up
@@ -338,10 +402,13 @@ class PhraseDatabase:
                 threshold = threshold_score[0]
 
                 # Delete phrases below threshold
-                cursor = conn.execute("""
+                cursor = conn.execute(
+                    """
                     DELETE FROM phrases
                     WHERE score < ?
-                """, (threshold,))
+                """,
+                    (threshold,),
+                )
 
                 deleted_count = cursor.rowcount
                 conn.commit()
@@ -354,7 +421,9 @@ class PhraseDatabase:
         except Exception as e:
             raise DatabaseError(f"Failed to cleanup phrases: {e}")
 
-    def remove_phrases_containing_word(self, word: str, case_sensitive: bool = False) -> int:
+    def remove_phrases_containing_word(
+        self, word: str, case_sensitive: bool = False
+    ) -> int:
         """Remove all phrases that contain a specific word.
 
         Args:
@@ -368,16 +437,22 @@ class PhraseDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 if case_sensitive:
                     # Case sensitive search
-                    cursor = conn.execute("""
+                    cursor = conn.execute(
+                        """
                         DELETE FROM phrases
                         WHERE phrase LIKE ?
-                    """, (f"%{word}%",))
+                    """,
+                        (f"%{word}%",),
+                    )
                 else:
                     # Case insensitive search
-                    cursor = conn.execute("""
+                    cursor = conn.execute(
+                        """
                         DELETE FROM phrases
                         WHERE UPPER(phrase) LIKE UPPER(?)
-                    """, (f"%{word}%",))
+                    """,
+                        (f"%{word}%",),
+                    )
 
                 deleted_count = cursor.rowcount
                 conn.commit()
@@ -391,46 +466,67 @@ class PhraseDatabase:
         except Exception as e:
             raise DatabaseError(f"Failed to remove phrases containing '{word}': {e}")
 
-    def get_improvable_phrases(self, limit: int = 10, max_failed_attempts: int = 5, max_children_created: int = 5) -> List[GeneratedPhrase]:
+    def get_improvable_phrases(
+        self,
+        limit: int = 10,
+        max_failed_attempts: int = 5,
+        max_children_created: int = 5,
+    ) -> List[GeneratedPhrase]:
         """Get phrases that can still be improved (haven't reached retirement thresholds)."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                rows = conn.execute("""
+                rows = conn.execute(
+                    """
                     SELECT * FROM phrases
                     WHERE consecutive_failed_improvements < ?
                     AND children_created < ?
                     ORDER BY score DESC, generated_at DESC
                     LIMIT ?
-                """, (max_failed_attempts, max_children_created, limit)).fetchall()
+                """,
+                    (max_failed_attempts, max_children_created, limit),
+                ).fetchall()
 
                 phrases = []
                 for row in rows:
                     # Handle backward compatibility for the new columns
                     try:
-                        consecutive_failed_improvements = row['consecutive_failed_improvements'] if 'consecutive_failed_improvements' in row.keys() else 0
+                        consecutive_failed_improvements = (
+                            row["consecutive_failed_improvements"]
+                            if "consecutive_failed_improvements" in row.keys()
+                            else 0
+                        )
                     except (KeyError, IndexError):
                         consecutive_failed_improvements = 0
 
                     try:
-                        children_created = row['children_created'] if 'children_created' in row.keys() else 0
+                        children_created = (
+                            row["children_created"]
+                            if "children_created" in row.keys()
+                            else 0
+                        )
                         # Fallback to old column name for backward compatibility
-                        if children_created == 0 and 'total_successful_improvements' in row.keys():
-                            children_created = row['total_successful_improvements']
+                        if (
+                            children_created == 0
+                            and "total_successful_improvements" in row.keys()
+                        ):
+                            children_created = row["total_successful_improvements"]
                     except (KeyError, IndexError):
                         children_created = 0
 
-                    phrases.append(GeneratedPhrase(
-                        id=row['id'],
-                        phrase=row['phrase'],
-                        score=row['score'],
-                        tiles_used=json.loads(row['tiles_used']),
-                        generated_at=datetime.fromisoformat(row['generated_at']),
-                        model_used=row['model_used'],
-                        prompt_context=row['prompt_context'],
-                        consecutive_failed_improvements=consecutive_failed_improvements,
-                        children_created=children_created
-                    ))
+                    phrases.append(
+                        GeneratedPhrase(
+                            id=row["id"],
+                            phrase=row["phrase"],
+                            score=row["score"],
+                            tiles_used=json.loads(row["tiles_used"]),
+                            generated_at=datetime.fromisoformat(row["generated_at"]),
+                            model_used=row["model_used"],
+                            prompt_context=row["prompt_context"],
+                            consecutive_failed_improvements=consecutive_failed_improvements,
+                            children_created=children_created,
+                        )
+                    )
 
                 return phrases
 
@@ -441,11 +537,14 @@ class PhraseDatabase:
         """Increment the consecutive failed improvements counter for a phrase."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE phrases
                     SET consecutive_failed_improvements = consecutive_failed_improvements + 1
                     WHERE id = ?
-                """, (phrase_id,))
+                """,
+                    (phrase_id,),
+                )
                 conn.commit()
 
         except Exception as e:
@@ -455,11 +554,14 @@ class PhraseDatabase:
         """Reset the consecutive failed improvements counter to 0 for a phrase."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE phrases
                     SET consecutive_failed_improvements = 0
                     WHERE id = ?
-                """, (phrase_id,))
+                """,
+                    (phrase_id,),
+                )
                 conn.commit()
 
         except Exception as e:
@@ -469,11 +571,14 @@ class PhraseDatabase:
         """Add to the children created counter for a phrase."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE phrases
                     SET children_created = children_created + ?
                     WHERE id = ?
-                """, (count, phrase_id))
+                """,
+                    (count, phrase_id),
+                )
                 conn.commit()
 
         except Exception as e:
@@ -483,10 +588,13 @@ class PhraseDatabase:
         """Start a new generation session."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.execute("""
+                cursor = conn.execute(
+                    """
                     INSERT INTO generation_sessions (tiles_input)
                     VALUES (?)
-                """, (tiles_input,))
+                """,
+                    (tiles_input,),
+                )
                 session_id = cursor.lastrowid
                 conn.commit()
                 return session_id
@@ -494,19 +602,34 @@ class PhraseDatabase:
         except Exception as e:
             raise DatabaseError(f"Failed to start session: {e}")
 
-    def update_session_stats(self, session_id: int, phrases_generated: int,
-                           valid_phrases: int, top_score: int, avg_score: float):
+    def update_session_stats(
+        self,
+        session_id: int,
+        phrases_generated: int,
+        valid_phrases: int,
+        top_score: int,
+        avg_score: float,
+    ):
         """Update generation session statistics."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE generation_sessions
                     SET phrases_generated = phrases_generated + ?,
                         valid_phrases = valid_phrases + ?,
                         top_score = MAX(top_score, ?),
                         avg_score = ?
                     WHERE id = ?
-                """, (phrases_generated, valid_phrases, top_score, avg_score, session_id))
+                """,
+                    (
+                        phrases_generated,
+                        valid_phrases,
+                        top_score,
+                        avg_score,
+                        session_id,
+                    ),
+                )
                 conn.commit()
 
         except Exception as e:
@@ -517,21 +640,24 @@ class PhraseDatabase:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
-                row = conn.execute("""
+                row = conn.execute(
+                    """
                     SELECT * FROM generation_sessions WHERE id = ?
-                """, (session_id,)).fetchone()
+                """,
+                    (session_id,),
+                ).fetchone()
 
                 if row is None:
                     return None
 
                 return GenerationSession(
-                    id=row['id'],
-                    session_start=datetime.fromisoformat(row['session_start']),
-                    phrases_generated=row['phrases_generated'],
-                    valid_phrases=row['valid_phrases'],
-                    top_score=row['top_score'],
-                    avg_score=row['avg_score'],
-                    tiles_input=row['tiles_input']
+                    id=row["id"],
+                    session_start=datetime.fromisoformat(row["session_start"]),
+                    phrases_generated=row["phrases_generated"],
+                    valid_phrases=row["valid_phrases"],
+                    top_score=row["top_score"],
+                    avg_score=row["avg_score"],
+                    tiles_input=row["tiles_input"],
                 )
 
         except Exception as e:
@@ -562,14 +688,16 @@ class PhraseDatabase:
                 """).fetchone()
 
                 return {
-                    'total_phrases': phrase_stats[0] if phrase_stats else 0,
-                    'max_score': phrase_stats[1] if phrase_stats else 0,
-                    'avg_score': round(phrase_stats[2], 2) if phrase_stats and phrase_stats[2] else 0,
-                    'first_phrase': phrase_stats[3] if phrase_stats else None,
-                    'last_phrase': phrase_stats[4] if phrase_stats else None,
-                    'total_sessions': session_stats[0] if session_stats else 0,
-                    'total_generated': session_stats[1] if session_stats else 0,
-                    'total_valid': session_stats[2] if session_stats else 0
+                    "total_phrases": phrase_stats[0] if phrase_stats else 0,
+                    "max_score": phrase_stats[1] if phrase_stats else 0,
+                    "avg_score": round(phrase_stats[2], 2)
+                    if phrase_stats and phrase_stats[2]
+                    else 0,
+                    "first_phrase": phrase_stats[3] if phrase_stats else None,
+                    "last_phrase": phrase_stats[4] if phrase_stats else None,
+                    "total_sessions": session_stats[0] if session_stats else 0,
+                    "total_generated": session_stats[1] if session_stats else 0,
+                    "total_valid": session_stats[2] if session_stats else 0,
                 }
 
         except Exception as e:
@@ -590,8 +718,19 @@ if __name__ == "__main__":
     test_phrase = GeneratedPhrase(
         phrase="WINTER WONDERLAND",
         score=85,
-        tiles_used={"W": 2, "I": 1, "N": 4, "T": 1, "E": 2, "R": 3, "O": 1, "D": 2, "L": 2, "A": 1},
-        model_used="test"
+        tiles_used={
+            "W": 2,
+            "I": 1,
+            "N": 4,
+            "T": 1,
+            "E": 2,
+            "R": 3,
+            "O": 1,
+            "D": 2,
+            "L": 2,
+            "A": 1,
+        },
+        model_used="test",
     )
 
     try:
@@ -611,5 +750,6 @@ if __name__ == "__main__":
 
     # Cleanup test database
     import os
+
     if os.path.exists("test_phrases.db"):
         os.remove("test_phrases.db")

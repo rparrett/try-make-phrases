@@ -11,6 +11,7 @@ from config.scrabble_values import get_letter_value, is_free_character
 
 class ScoringError(Exception):
     """Exception raised for scoring errors."""
+
     pass
 
 
@@ -21,7 +22,9 @@ class ScrabbleScorer:
         """Initialize the scorer."""
         self.logger = logging.getLogger(__name__)
 
-    def score_phrase(self, phrase: str, tiles_used: Dict[str, int]) -> Tuple[int, Dict[str, Dict[str, int]]]:
+    def score_phrase(
+        self, phrase: str, tiles_used: Dict[str, int]
+    ) -> Tuple[int, Dict[str, Dict[str, int]]]:
         """
         Calculate the Scrabble score for a phrase.
 
@@ -44,7 +47,7 @@ class ScrabbleScorer:
 
             # Count how many of each letter we used from tiles
             letter_usage = {}
-            blanks_used = tiles_used.get('_', 0)
+            blanks_used = tiles_used.get("_", 0)
             blank_assignments = {}
 
             # First, assign regular tiles
@@ -52,7 +55,7 @@ class ScrabbleScorer:
                 if is_free_character(letter):
                     continue  # Free characters don't contribute to score
 
-                if letter in tiles_used and letter != '_':
+                if letter in tiles_used and letter != "_":
                     # Use regular tile
                     if letter not in letter_usage:
                         letter_usage[letter] = 0
@@ -63,9 +66,13 @@ class ScrabbleScorer:
                         total_score += letter_score
 
                         if letter not in score_breakdown:
-                            score_breakdown[letter] = {'count': 0, 'points_per': letter_score, 'total': 0}
-                        score_breakdown[letter]['count'] += 1
-                        score_breakdown[letter]['total'] += letter_score
+                            score_breakdown[letter] = {
+                                "count": 0,
+                                "points_per": letter_score,
+                                "total": 0,
+                            }
+                        score_breakdown[letter]["count"] += 1
+                        score_breakdown[letter]["total"] += letter_score
                     else:
                         # Must use a blank tile for this letter
                         if blanks_used > 0:
@@ -75,12 +82,17 @@ class ScrabbleScorer:
                             blanks_used -= 1
 
                             # Blank tiles score 0 points
-                            if '_' not in score_breakdown:
-                                score_breakdown['_'] = {'count': 0, 'points_per': 0, 'total': 0, 'representing': {}}
-                            score_breakdown['_']['count'] += 1
-                            if letter not in score_breakdown['_']['representing']:
-                                score_breakdown['_']['representing'][letter] = 0
-                            score_breakdown['_']['representing'][letter] += 1
+                            if "_" not in score_breakdown:
+                                score_breakdown["_"] = {
+                                    "count": 0,
+                                    "points_per": 0,
+                                    "total": 0,
+                                    "representing": {},
+                                }
+                            score_breakdown["_"]["count"] += 1
+                            if letter not in score_breakdown["_"]["representing"]:
+                                score_breakdown["_"]["representing"][letter] = 0
+                            score_breakdown["_"]["representing"][letter] += 1
 
             return total_score, score_breakdown
 
@@ -102,8 +114,14 @@ class ScrabbleScorer:
         score, _ = self.score_phrase(phrase, tiles_used)
         return score
 
-    def create_scored_phrase(self, phrase: str, tiles: TileInventory, tiles_used: Dict[str, int],
-                           model_used: str = "llama2:7b", prompt_context: Optional[str] = None) -> GeneratedPhrase:
+    def create_scored_phrase(
+        self,
+        phrase: str,
+        tiles: TileInventory,
+        tiles_used: Dict[str, int],
+        model_used: str = "llama2:7b",
+        prompt_context: Optional[str] = None,
+    ) -> GeneratedPhrase:
         """
         Create a GeneratedPhrase object with calculated score.
 
@@ -124,7 +142,7 @@ class ScrabbleScorer:
             score=score,
             tiles_used=tiles_used,
             model_used=model_used,
-            prompt_context=prompt_context
+            prompt_context=prompt_context,
         )
 
     def get_max_possible_score(self, tiles: TileInventory) -> int:
@@ -141,7 +159,7 @@ class ScrabbleScorer:
         total_score = 0
 
         for letter, count in tiles.tiles.items():
-            if letter == '_':
+            if letter == "_":
                 continue  # Blanks are worth 0
             letter_value = get_letter_value(letter)
             total_score += letter_value * count
@@ -182,12 +200,12 @@ class ScrabbleScorer:
 
         # Regular letters
         for letter, details in sorted(score_breakdown.items()):
-            if letter == '_':
+            if letter == "_":
                 continue  # Handle blanks separately
 
-            count = details['count']
-            points_per = details['points_per']
-            total = details['total']
+            count = details["count"]
+            points_per = details["points_per"]
+            total = details["total"]
 
             if count == 1:
                 parts.append(f"{letter}({points_per})")
@@ -195,14 +213,16 @@ class ScrabbleScorer:
                 parts.append(f"{letter}×{count}({points_per}ea={total})")
 
         # Blank tiles
-        if '_' in score_breakdown:
-            blank_details = score_breakdown['_']
-            blank_count = blank_details['count']
-            representing = blank_details.get('representing', {})
+        if "_" in score_breakdown:
+            blank_details = score_breakdown["_"]
+            blank_count = blank_details["count"]
+            representing = blank_details.get("representing", {})
 
             blank_desc = f"Blanks×{blank_count}(0pts"
             if representing:
-                repr_parts = [f"{letter}×{count}" for letter, count in representing.items()]
+                repr_parts = [
+                    f"{letter}×{count}" for letter, count in representing.items()
+                ]
                 blank_desc += f" as {', '.join(repr_parts)}"
             blank_desc += ")"
             parts.append(blank_desc)
@@ -230,7 +250,7 @@ if __name__ == "__main__":
         "SNOW DAY",
         "HOLIDAY CHEER",
         "COLD NIGHT",
-        "WINTER WONDERLAND"
+        "WINTER WONDERLAND",
     ]
 
     print(f"\nMaximum possible score: {scorer.get_max_possible_score(test_tiles)}")
@@ -250,7 +270,9 @@ if __name__ == "__main__":
             print(f"    Breakdown: {breakdown_str}")
 
             # Test creating GeneratedPhrase
-            generated_phrase = scorer.create_scored_phrase(phrase, test_tiles, tiles_used)
+            generated_phrase = scorer.create_scored_phrase(
+                phrase, test_tiles, tiles_used
+            )
             print(f"    Generated: {generated_phrase}")
         else:
             print(f"\n  '{phrase}': INVALID - {error}")

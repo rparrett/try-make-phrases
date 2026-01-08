@@ -14,6 +14,7 @@ from storage.models import TileInventory
 
 class TileParseError(Exception):
     """Exception raised when tile parsing fails."""
+
     pass
 
 
@@ -38,7 +39,7 @@ def parse_tile_string(tile_string: str) -> TileInventory:
     # Pattern to match optional number followed by letter/underscore
     # (\d+)? captures optional number
     # ([a-zA-Z_]) captures the letter or underscore
-    pattern = r'(\d+)?([a-zA-Z_])'
+    pattern = r"(\d+)?([a-zA-Z_])"
 
     matches = re.findall(pattern, tile_string)
 
@@ -59,8 +60,8 @@ def parse_tile_string(tile_string: str) -> TileInventory:
             raise TileParseError(f"Tile count too large: {count} for letter '{letter}'")
 
         # Convert to uppercase for consistency, except for blank tile
-        if letter == '_':
-            tile_key = '_'
+        if letter == "_":
+            tile_key = "_"
         else:
             tile_key = letter.upper()
 
@@ -106,7 +107,7 @@ def validate_tiles(tiles: TileInventory) -> bool:
 
     # Check individual letter counts aren't too extreme
     for letter, count in tiles.tiles.items():
-        if letter == '_':
+        if letter == "_":
             # Blanks: allow up to reasonable number
             if count > 10:
                 return False
@@ -166,11 +167,11 @@ def tiles_to_string(tiles: TileInventory) -> str:
     parts = []
     for letter, count in sorted_tiles:
         if count == 1:
-            parts.append(letter.lower() if letter != '_' else letter)
+            parts.append(letter.lower() if letter != "_" else letter)
         else:
             parts.append(f"{count}{letter.lower() if letter != '_' else letter}")
 
-    return ''.join(parts)
+    return "".join(parts)
 
 
 # Example usage and testing

@@ -51,14 +51,14 @@ def recalculate_scores(tiles_input: str, db_path: str = "data/phrases.db"):
         print(f"📈 Phrases updated: {recalc_stats['updated_count']}")
         print(f"🗑️  Phrases removed: {recalc_stats['removed_count']} (unbuildable)")
 
-        if recalc_stats['removed_count'] > 0:
+        if recalc_stats["removed_count"] > 0:
             final_count = db.get_phrase_count()
             print(f"📊 Final phrase count: {final_count}")
 
         # Show some score changes if verbose
         if len(sys.argv) > 2 and sys.argv[2] == "--verbose":
             print(f"\n📋 Score Changes (showing first 10):")
-            for phrase, score in recalc_stats['score_changes'][:10]:
+            for phrase, score in recalc_stats["score_changes"][:10]:
                 print(f"   {phrase}: {score}")
 
         print(f"\n🎯 Database ready for tile set: {tiles_input}")
@@ -76,7 +76,9 @@ def main():
         print()
         print("Usage:")
         print("  python recalculate_scores.py 'tile_string' [--verbose]")
-        print("  python recalculate_scores.py '9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh'")
+        print(
+            "  python recalculate_scores.py '9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh'"
+        )
         print()
         print("This will:")
         print("  - Recalculate all phrase scores for the new tile set")

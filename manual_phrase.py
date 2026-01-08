@@ -18,7 +18,9 @@ from storage.database import PhraseDatabase
 from storage.models import GeneratedPhrase
 
 
-def add_manual_phrase(phrase: str, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh") -> bool:
+def add_manual_phrase(
+    phrase: str, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
+) -> bool:
     """
     Add a manually discovered phrase to the database.
 
@@ -57,14 +59,16 @@ def add_manual_phrase(phrase: str, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx
             score=score,
             tiles_used=tiles_used,
             model_used="manual-entry",
-            prompt_context="Manually discovered phrase"
+            prompt_context="Manually discovered phrase",
         )
 
         # Add to database
         db = PhraseDatabase("data/phrases.db")
         phrase_id = db.add_phrase(generated_phrase)
 
-        print(f"🎯 Successfully added '{phrase.upper()}' with score {score} (ID: {phrase_id})")
+        print(
+            f"🎯 Successfully added '{phrase.upper()}' with score {score} (ID: {phrase_id})"
+        )
         return True
 
     except Exception as e:
@@ -72,7 +76,9 @@ def add_manual_phrase(phrase: str, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx
         return False
 
 
-def add_multiple_phrases(phrases: list, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"):
+def add_multiple_phrases(
+    phrases: list, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
+):
     """Add multiple phrases at once."""
     print(f"Adding {len(phrases)} phrases...")
     print("-" * 50)
@@ -117,16 +123,24 @@ def main():
             "WINTER OLYMPICS BRONZE MEDAL CEREMONY",
             "FROZEN POND ICE SKATING CHAMPIONSHIP",
             "COZY FIREPLACE EVENING WITH JAZZ MUSIC",
-            "SLEDDING ADVENTURE IN THE SNOWY MOUNTAINS"
+            "SLEDDING ADVENTURE IN THE SNOWY MOUNTAINS",
             # Add your phrases here...
         ]
 
-        tiles = sys.argv[2] if len(sys.argv) > 2 else "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
+        tiles = (
+            sys.argv[2]
+            if len(sys.argv) > 2
+            else "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
+        )
         add_multiple_phrases(phrases, tiles)
     else:
         # Single phrase mode
         phrase = sys.argv[1]
-        tiles = sys.argv[2] if len(sys.argv) > 2 else "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
+        tiles = (
+            sys.argv[2]
+            if len(sys.argv) > 2
+            else "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
+        )
 
         print("🎯 Adding Manual Phrase")
         print("-" * 30)

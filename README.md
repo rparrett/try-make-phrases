@@ -166,6 +166,26 @@ uv run python -m src.phrase_generator.main status
 
 ## Development
 
+### Setup Development Environment
+```bash
+# Install development dependencies (includes ruff)
+uv sync
+```
+
+### Code Formatting and Linting
+This project uses Ruff for formatting and linting:
+
+```bash
+# Format code
+uv run ruff format .
+
+# Check/lint code
+uv run ruff check .
+
+# Auto-fix issues
+uv run ruff check --fix .
+```
+
 ### Project Structure
 ```
 try-make-phrases/

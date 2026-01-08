@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class TileInventory(BaseModel):
     """Represents available tiles with quantities."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tiles: Dict[str, int] = Field(..., description="Letter to quantity mapping")
@@ -39,8 +40,8 @@ class TileInventory(BaseModel):
             if char in temp_tiles and temp_tiles[char] > 0:
                 temp_tiles[char] -= 1
             # Check if we can use a blank tile
-            elif '_' in temp_tiles and temp_tiles['_'] > 0:
-                temp_tiles['_'] -= 1
+            elif "_" in temp_tiles and temp_tiles["_"] > 0:
+                temp_tiles["_"] -= 1
             else:
                 return False
 
@@ -49,17 +50,26 @@ class TileInventory(BaseModel):
 
 class GeneratedPhrase(BaseModel):
     """Represents a generated phrase with metadata."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     id: Optional[int] = None
     phrase: str = Field(..., description="The actual phrase text")
     score: int = Field(..., description="Scrabble score for the phrase")
-    tiles_used: Dict[str, int] = Field(..., description="Tiles consumed to make this phrase")
+    tiles_used: Dict[str, int] = Field(
+        ..., description="Tiles consumed to make this phrase"
+    )
     generated_at: datetime = Field(default_factory=datetime.now)
-    model_used: str = Field(default="llama2:7b", description="LLM model that generated this phrase")
+    model_used: str = Field(
+        default="llama2:7b", description="LLM model that generated this phrase"
+    )
     prompt_context: Optional[str] = None
-    consecutive_failed_improvements: int = Field(default=0, description="Number of consecutive failed improvement attempts")
-    children_created: int = Field(default=0, description="Total number of child phrases created from this phrase")
+    consecutive_failed_improvements: int = Field(
+        default=0, description="Number of consecutive failed improvement attempts"
+    )
+    children_created: int = Field(
+        default=0, description="Total number of child phrases created from this phrase"
+    )
 
     def __str__(self) -> str:
         return f"{self.phrase} (Score: {self.score})"
@@ -70,6 +80,7 @@ class GeneratedPhrase(BaseModel):
 
 class GenerationSession(BaseModel):
     """Statistics for a generation session."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     id: Optional[int] = None
@@ -129,12 +140,20 @@ class GenerationSession(BaseModel):
                 self.fresh_avg_score = sum(scores) / len(scores)
             else:
                 # Weighted average incorporating new scores
-                total_fresh_score = self.fresh_avg_score * (self.fresh_successes - successes)
+                total_fresh_score = self.fresh_avg_score * (
+                    self.fresh_successes - successes
+                )
                 total_fresh_score += sum(scores)
                 self.fresh_avg_score = total_fresh_score / self.fresh_successes
 
-    def update_improvement_stats(self, attempts: int, successes: int, scores: List[int],
-                               original_scores: List[int], improved_scores: List[int]):
+    def update_improvement_stats(
+        self,
+        attempts: int,
+        successes: int,
+        scores: List[int],
+        original_scores: List[int],
+        improved_scores: List[int],
+    ):
         """Update statistics for phrase improvements."""
         self.improvement_attempts += attempts
         self.improvement_successes += successes
@@ -145,9 +164,13 @@ class GenerationSession(BaseModel):
                 self.improvement_avg_score = sum(scores) / len(scores)
             else:
                 # Weighted average incorporating new scores
-                total_improvement_score = self.improvement_avg_score * (self.improvement_successes - successes)
+                total_improvement_score = self.improvement_avg_score * (
+                    self.improvement_successes - successes
+                )
                 total_improvement_score += sum(scores)
-                self.improvement_avg_score = total_improvement_score / self.improvement_successes
+                self.improvement_avg_score = (
+                    total_improvement_score / self.improvement_successes
+                )
 
         # Track improvement effectiveness
         for orig_score, improved_score in zip(original_scores, improved_scores):
@@ -171,7 +194,10 @@ class GenerationSession(BaseModel):
 
     def get_improvement_effectiveness(self) -> float:
         """Get percentage of improvements that were better than original."""
-        total_comparisons = self.improvements_better_than_original + self.improvements_worse_than_original
+        total_comparisons = (
+            self.improvements_better_than_original
+            + self.improvements_worse_than_original
+        )
         if total_comparisons == 0:
             return 0.0
         return (self.improvements_better_than_original / total_comparisons) * 100
@@ -179,23 +205,41 @@ class GenerationSession(BaseModel):
 
 class OptimizationConfig(BaseModel):
     """Configuration for the optimization process."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    max_phrases_stored: int = Field(default=1000, description="Maximum phrases to keep in database")
-    generation_batch_size: int = Field(default=15, description="Number of phrases to generate per LLM call")
-    iteration_delay_seconds: int = Field(default=30, description="Seconds between generation cycles")
-    context_phrases_count: int = Field(default=5, description="Number of top phrases to use as context")
-    cleanup_threshold: int = Field(default=10000, description="Trigger cleanup when exceeding this many phrases")
-    min_score_threshold: int = Field(default=10, description="Minimum score to consider keeping a phrase")
+    max_phrases_stored: int = Field(
+        default=1000, description="Maximum phrases to keep in database"
+    )
+    generation_batch_size: int = Field(
+        default=15, description="Number of phrases to generate per LLM call"
+    )
+    iteration_delay_seconds: int = Field(
+        default=30, description="Seconds between generation cycles"
+    )
+    context_phrases_count: int = Field(
+        default=5, description="Number of top phrases to use as context"
+    )
+    cleanup_threshold: int = Field(
+        default=10000, description="Trigger cleanup when exceeding this many phrases"
+    )
+    min_score_threshold: int = Field(
+        default=10, description="Minimum score to consider keeping a phrase"
+    )
 
     # MacBook optimization settings
-    max_cpu_usage: float = Field(default=80.0, description="Max CPU usage before throttling")
+    max_cpu_usage: float = Field(
+        default=80.0, description="Max CPU usage before throttling"
+    )
     max_memory_mb: int = Field(default=2048, description="Max memory usage in MB")
-    thermal_monitoring: bool = Field(default=True, description="Enable thermal monitoring")
+    thermal_monitoring: bool = Field(
+        default=True, description="Enable thermal monitoring"
+    )
 
 
 class SystemHealth(BaseModel):
     """Current system health metrics."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     cpu_usage: float = 0.0
@@ -208,7 +252,9 @@ class SystemHealth(BaseModel):
     def is_healthy(self, config: OptimizationConfig) -> bool:
         """Check if system is healthy for continued operation."""
         return (
-            self.cpu_usage < config.max_cpu_usage and
-            self.memory_usage_mb < config.max_memory_mb and
-            (self.temperature is None or self.temperature < 85.0)  # CPU temp threshold
+            self.cpu_usage < config.max_cpu_usage
+            and self.memory_usage_mb < config.max_memory_mb
+            and (
+                self.temperature is None or self.temperature < 85.0
+            )  # CPU temp threshold
         )

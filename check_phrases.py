@@ -26,7 +26,9 @@ def check_database(db_path: str = "data/phrases.db"):
 
         # Overall stats
         total_phrases = conn.execute("SELECT COUNT(*) FROM phrases").fetchone()[0]
-        manual_phrases = conn.execute("SELECT COUNT(*) FROM phrases WHERE model_used = 'manual-entry'").fetchone()[0]
+        manual_phrases = conn.execute(
+            "SELECT COUNT(*) FROM phrases WHERE model_used = 'manual-entry'"
+        ).fetchone()[0]
         max_score = conn.execute("SELECT MAX(score) FROM phrases").fetchone()[0] or 0
 
         print(f"📊 Total phrases: {total_phrases}")
@@ -57,7 +59,7 @@ def check_database(db_path: str = "data/phrases.db"):
         """).fetchall()
 
         for i, row in enumerate(top_phrases, 1):
-            source = "✋" if row['model_used'] == 'manual-entry' else "🤖"
+            source = "✋" if row["model_used"] == "manual-entry" else "🤖"
             print(f"{i:2}. {source} {row['phrase']} ({row['score']})")
 
         print(f"\n📈 Recent Activity (Last 10):")
@@ -70,8 +72,8 @@ def check_database(db_path: str = "data/phrases.db"):
         """).fetchall()
 
         for i, row in enumerate(recent, 1):
-            source = "✋" if row['model_used'] == 'manual-entry' else "🤖"
-            timestamp = row['generated_at'][:16]  # YYYY-MM-DD HH:MM
+            source = "✋" if row["model_used"] == "manual-entry" else "🤖"
+            timestamp = row["generated_at"][:16]  # YYYY-MM-DD HH:MM
             print(f"{i:2}. {source} {row['phrase']} ({row['score']}) - {timestamp}")
 
         conn.close()
