@@ -466,6 +466,18 @@ class PhraseDatabase:
         except Exception as e:
             raise DatabaseError(f"Failed to remove phrases containing '{word}': {e}")
 
+    def clear_all_phrases(self) -> None:
+        """Delete all phrases from the database."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("DELETE FROM phrases")
+                conn.commit()
+                # Vacuum to reclaim space
+                conn.execute("VACUUM")
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to clear all phrases: {e}")
+
     def get_improvable_phrases(
         self,
         limit: int = 10,

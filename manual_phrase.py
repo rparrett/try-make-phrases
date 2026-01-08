@@ -17,49 +17,71 @@ from storage.database import PhraseDatabase
 from storage.models import GeneratedPhrase
 
 
-def add_manual_phrase(
-    phrase: str, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
-) -> bool:
+def add_manual_phrase(phrase: str, tiles_input: str = None) -> bool:
     """
     Add a manually discovered phrase to the database.
 
     Args:
         phrase: The phrase to add
-        tiles_input: Tile string (defaults to your current set)
+        tiles_input: Optional tile string for validation. If not provided, phrase is added without tile validation.
 
     Returns:
         True if successfully added, False otherwise
     """
     try:
-        # Parse your tiles
-        print(f"Parsing tiles: {tiles_input}")
-        tiles = parse_tile_string(tiles_input)
-        print(f"Available tiles: {tiles.tiles}")
+        if tiles_input:
+            # Parse and validate against provided tiles
+            print(f"Parsing tiles: {tiles_input}")
+            tiles = parse_tile_string(tiles_input)
+            print(f"Available tiles: {tiles.tiles}")
 
-        # Validate phrase can be built
-        validator = PhraseValidator()
-        is_valid, tiles_used, error = validator.validate_phrase(phrase.upper(), tiles)
+            # Validate phrase can be built
+            validator = PhraseValidator()
+            is_valid, tiles_used, error = validator.validate_phrase(
+                phrase.upper(), tiles
+            )
 
-        if not is_valid:
-            print(f"❌ ERROR: '{phrase}' cannot be built: {error}")
-            return False
+            if not is_valid:
+                print(f"❌ ERROR: '{phrase}' cannot be built: {error}")
+                return False
 
-        # Calculate score
-        scorer = ScrabbleScorer()
-        score = scorer.score_phrase_simple(phrase.upper(), tiles_used)
+            # Calculate score
+            scorer = ScrabbleScorer()
+            score = scorer.score_phrase_simple(phrase.upper(), tiles_used)
 
-        print(f"✅ Phrase validated: '{phrase.upper()}'")
-        print(f"   Score: {score}")
-        print(f"   Tiles used: {tiles_used}")
+            print(f"✅ Phrase validated: '{phrase.upper()}'")
+            print(f"   Score: {score}")
+            print(f"   Tiles used: {tiles_used}")
 
-        # Create phrase object
-        generated_phrase = GeneratedPhrase(
-            phrase=phrase.upper(),
-            score=score,
-            tiles_used=tiles_used,
-            model_used="manual-entry",
-            prompt_context="Manually discovered phrase",
-        )
+            # Create phrase object with tile validation
+            generated_phrase = GeneratedPhrase(
+                phrase=phrase.upper(),
+                score=score,
+                tiles_used=tiles_used,
+                model_used="manual-entry",
+                prompt_context="Manually discovered phrase",
+            )
+        else:
+            # No tiles provided - add phrase without validation
+            # Calculate basic score using letter values
+            from config.scrabble_values import get_letter_value, is_free_character
+
+            score = 0
+            for char in phrase.upper():
+                if not is_free_character(char):
+                    score += get_letter_value(char)
+
+            print(f"✅ Adding phrase without tile validation: '{phrase.upper()}'")
+            print(f"   Basic score: {score}")
+
+            # Create phrase object without tile validation
+            generated_phrase = GeneratedPhrase(
+                phrase=phrase.upper(),
+                score=score,
+                tiles_used={},  # Empty dict since no tiles validated
+                model_used="manual-entry",
+                prompt_context="Manually added phrase (no tile validation)",
+            )
 
         # Add to database
         db = PhraseDatabase("data/phrases.db")
@@ -75,9 +97,7 @@ def add_manual_phrase(
         return False
 
 
-def add_multiple_phrases(
-    phrases: list, tiles_input: str = "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
-):
+def add_multiple_phrases(phrases: list, tiles_input: str = None):
     """Add multiple phrases at once."""
     print(f"Adding {len(phrases)} phrases...")
     print("-" * 50)
@@ -98,6 +118,24 @@ def add_multiple_phrases(
     print(f"📊 Total processed: {len(phrases)}")
 
 
+def clear_all_phrases():
+    """Delete all phrases from the database."""
+    try:
+        db = PhraseDatabase("data/phrases.db")
+        count = db.get_phrase_count()
+
+        if count == 0:
+            print("✅ Database is already empty")
+            return
+
+        # Clear the database
+        db.clear_all_phrases()
+        print(f"🗑️  Successfully deleted all {count} phrases")
+
+    except Exception as e:
+        print(f"❌ ERROR: Failed to clear phrases: {e}")
+
+
 def main():
     """Main script entry point."""
     if len(sys.argv) < 2:
@@ -106,18 +144,40 @@ def main():
         print()
         print("Usage:")
         print("  python manual_phrase.py 'YOUR PHRASE HERE'")
-        print("  python manual_phrase.py 'PHRASE' 'custom_tile_string'")
-        print("  python manual_phrase.py --batch")
+        print("  python manual_phrase.py 'PHRASE' 'tile_string_for_validation'")
+        print("  python manual_phrase.py --clear 'PHRASE' [tile_string]")
+        print("  python manual_phrase.py --batch [optional_tile_string]")
+        print("  python manual_phrase.py --clear --batch [optional_tile_string]")
         print()
         print("Examples:")
-        print("  python manual_phrase.py 'WINTER SLEDDING CHAMPIONSHIP'")
-        print("  python manual_phrase.py 'BRONZE MEDAL CEREMONY' '9i13e2mk...'")
+        print(
+            "  python manual_phrase.py 'WINTER SLEDDING CHAMPIONSHIP'  # No tile validation"
+        )
+        print(
+            "  python manual_phrase.py 'BRONZE MEDAL CEREMONY' '9i13e2mk...'  # With tile validation"
+        )
+        print("  python manual_phrase.py --clear 'WINTER WONDERLAND'  # Clear all, add phrase")
+        print("  python manual_phrase.py --clear --batch  # Clear all, add batch")
         print()
+        print(
+            "If no tiles provided, phrase is added with basic scoring (no tile validation)."
+        )
         print("For batch mode, edit the 'phrases' list in this script.")
         sys.exit(1)
 
-    if sys.argv[1] == "--batch":
-        # Edit this list to add multiple phrases at once
+    # Check for clear flag
+    should_clear = "--clear" in sys.argv
+    args = [arg for arg in sys.argv[1:] if arg != "--clear"]
+
+    if should_clear:
+        clear_all_phrases()
+        print()  # Add spacing after clear
+
+    if not args:
+        # Just --clear with no other args
+        return
+    elif args[0] == "--batch":
+        # Batch mode
         phrases = [
             "WINTER OLYMPICS BRONZE MEDAL CEREMONY",
             "FROZEN POND ICE SKATING CHAMPIONSHIP",
@@ -126,20 +186,12 @@ def main():
             # Add your phrases here...
         ]
 
-        tiles = (
-            sys.argv[2]
-            if len(sys.argv) > 2
-            else "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
-        )
+        tiles = args[1] if len(args) > 1 else None
         add_multiple_phrases(phrases, tiles)
     else:
         # Single phrase mode
-        phrase = sys.argv[1]
-        tiles = (
-            sys.argv[2]
-            if len(sys.argv) > 2
-            else "9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh"
-        )
+        phrase = args[0]
+        tiles = args[1] if len(args) > 1 else None
 
         print("🎯 Adding Manual Phrase")
         print("-" * 30)
