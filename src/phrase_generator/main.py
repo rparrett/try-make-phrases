@@ -31,9 +31,29 @@ from src.phrase_generator.phrase_ranker import PhraseRanker, RankingError
 running = True
 generation_session: Optional[GenerationSession] = None
 
+# Track recent phrase generation attempts for TUI display
+recent_phrase_attempts = []
+
 # Strategy constants
 MAX_FAILED_IMPROVEMENT_ATTEMPTS = 5
 MAX_CHILDREN_CREATED = 5
+
+
+def add_phrase_attempt(phrase: str, score: int, accepted: bool, reason: str = ""):
+    """Track a phrase generation attempt for TUI display."""
+    global recent_phrase_attempts
+    attempt = {
+        "phrase": phrase,
+        "score": score,
+        "accepted": accepted,
+        "reason": reason,
+        "timestamp": datetime.now(),
+    }
+    recent_phrase_attempts.append(attempt)
+
+    # Keep only last 15 attempts
+    if len(recent_phrase_attempts) > 15:
+        recent_phrase_attempts.pop(0)
 
 
 def signal_handler(sig, frame):
@@ -69,25 +89,37 @@ def create_status_display(
     except Exception as e:
         top_text = f"Top phrases unavailable: {e}"
 
-    # Recent Phrases Panel
+    # Recent Phrase Attempts Panel
+    global recent_phrase_attempts
     try:
-        recent_phrases = ranker.get_recent_phrases(
-            12
-        )  # Get up to 12 most recent by date
+        if recent_phrase_attempts:
+            recent_text = "Recent Attempts (✓ accepted, ✗ rejected):\n"
+        else:
+            recent_text = "No recent attempts yet"
 
-        recent_text = "Recent Phrases:\n"
-        # Already newest first from database, no need to reverse
-        for i, phrase in enumerate(recent_phrases, 1):
-            # Show time ago for recent phrases
-            time_ago = datetime.now() - phrase.generated_at
+        # Show last 12 attempts in reverse order (newest first)
+        recent_attempts = recent_phrase_attempts[-12:][::-1]
+        for i, attempt in enumerate(recent_attempts, 1):
+            # Show time ago
+            time_ago = datetime.now() - attempt["timestamp"]
             if time_ago.total_seconds() < 3600:  # Less than an hour
                 time_str = f"{int(time_ago.total_seconds() // 60)}m ago"
             else:
                 time_str = f"{int(time_ago.total_seconds() // 3600)}h ago"
-            recent_text += f"{i}. {phrase.phrase} ({phrase.score}) - {time_str}\n"
+
+            # Color coding: green for accepted, red for rejected
+            if attempt["accepted"]:
+                status_icon = "[green]✓[/green]"
+                phrase_color = "[white]"
+            else:
+                status_icon = "[red]✗[/red]"
+                phrase_color = "[dim white]"  # Dimmer for rejected
+
+            reason = f" ({attempt['reason']})" if attempt["reason"] else ""
+            recent_text += f"{i}. {status_icon} {phrase_color}{attempt['phrase']}[/] ({attempt['score']}) - {time_str}{reason}\n"
 
     except Exception as e:
-        recent_text = f"Recent phrases unavailable: {e}"
+        recent_text = f"Recent attempts unavailable: {e}"
 
     # Session Stats Panel
     if session_stats:
@@ -304,19 +336,35 @@ async def generation_cycle(
                 )
                 if is_valid:
                     score = ranker.scorer.score_phrase_simple(phrase, tiles_used)
-                    if (
-                        score >= ranker.config.min_score_threshold
-                        and score > original_score
-                    ):
-                        # Only keep phrases that beat the parent AND meet minimum threshold
-                        generated_phrase = ranker.scorer.create_scored_phrase(
+
+                    if score >= ranker.config.min_score_threshold:
+                        if score > original_score:
+                            # Phrase beats parent - accept it
+                            add_phrase_attempt(phrase, score, True, "beats parent")
+                            generated_phrase = ranker.scorer.create_scored_phrase(
+                                phrase,
+                                tiles,
+                                tiles_used,
+                                llm_client.model_name,
+                                f"{cycle_type.title()} generation",
+                            )
+                            temp_phrases.append(generated_phrase)
+                        else:
+                            # Phrase doesn't beat parent - reject it
+                            add_phrase_attempt(
+                                phrase, score, False, f"≤ parent ({original_score})"
+                            )
+                    else:
+                        # Below minimum threshold - reject it
+                        add_phrase_attempt(
                             phrase,
-                            tiles,
-                            tiles_used,
-                            llm_client.model_name,
-                            f"{cycle_type.title()} generation",
+                            score,
+                            False,
+                            f"< min ({ranker.config.min_score_threshold})",
                         )
-                        temp_phrases.append(generated_phrase)
+                else:
+                    # Invalid phrase - track it too
+                    add_phrase_attempt(phrase, 0, False, "invalid")
 
             # Add only the filtered (better) phrases to database
             if temp_phrases:
@@ -333,13 +381,45 @@ async def generation_cycle(
                 added_phrases = []
                 logger.debug("No improvement candidates beat the parent score")
         else:
-            # For fresh generation, use normal flow (no parent to beat)
-            added_phrases = ranker.add_phrase_candidates(
-                phrase_candidates,
-                tiles,
-                llm_client.model_name,
-                f"{cycle_type.title()} generation",
-            )
+            # For fresh generation, track all attempts before adding to database
+            temp_phrases = []
+            for phrase in phrase_candidates:
+                is_valid, tiles_used, error = ranker.validator.validate_phrase(
+                    phrase, tiles
+                )
+                if is_valid:
+                    score = ranker.scorer.score_phrase_simple(phrase, tiles_used)
+                    if score >= ranker.config.min_score_threshold:
+                        # Fresh phrase meets threshold - accept it
+                        add_phrase_attempt(phrase, score, True, "fresh gen")
+                        generated_phrase = ranker.scorer.create_scored_phrase(
+                            phrase,
+                            tiles,
+                            tiles_used,
+                            llm_client.model_name,
+                            f"{cycle_type.title()} generation",
+                        )
+                        temp_phrases.append(generated_phrase)
+                    else:
+                        # Below minimum threshold - reject it
+                        add_phrase_attempt(
+                            phrase,
+                            score,
+                            False,
+                            f"< min ({ranker.config.min_score_threshold})",
+                        )
+                else:
+                    # Invalid phrase - track it
+                    add_phrase_attempt(phrase, 0, False, "invalid")
+
+            # Add the valid phrases to database
+            added_phrases = []
+            if temp_phrases:
+                phrase_ids = ranker.db.add_phrases_batch(temp_phrases)
+                for phrase, phrase_id in zip(temp_phrases, phrase_ids):
+                    if phrase_id:  # Some might be None due to duplicates
+                        phrase.id = phrase_id
+                        added_phrases.append(phrase)
 
         # Track statistics
         successful_scores = [phrase.score for phrase in added_phrases]
