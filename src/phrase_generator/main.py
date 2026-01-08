@@ -4,6 +4,7 @@ Main orchestration loop for the Scrabble phrase generator.
 
 import asyncio
 import time
+
 # psutil import removed (system health monitoring removed)
 import signal
 import sys
@@ -48,8 +49,11 @@ def signal_handler(sig, frame):
 # Throttling removed per user request
 
 
-def create_status_display(ranker: PhraseRanker, tiles: TileInventory,
-                         session_stats: Optional[GenerationSession] = None) -> Layout:
+def create_status_display(
+    ranker: PhraseRanker,
+    tiles: TileInventory,
+    session_stats: Optional[GenerationSession] = None,
+) -> Layout:
     """Create a rich layout for status display."""
     layout = Layout()
 
@@ -67,7 +71,9 @@ def create_status_display(ranker: PhraseRanker, tiles: TileInventory,
 
     # Recent Phrases Panel
     try:
-        recent_phrases = ranker.get_recent_phrases(12)  # Get up to 12 most recent by date
+        recent_phrases = ranker.get_recent_phrases(
+            12
+        )  # Get up to 12 most recent by date
 
         recent_text = "Recent Phrases:\n"
         # Already newest first from database, no need to reverse
@@ -86,8 +92,12 @@ def create_status_display(ranker: PhraseRanker, tiles: TileInventory,
     # Session Stats Panel
     if session_stats:
         runtime = datetime.now() - session_stats.session_start
-        overall_attempts = session_stats.fresh_attempts + session_stats.improvement_attempts
-        overall_successes = session_stats.fresh_successes + session_stats.improvement_successes
+        overall_attempts = (
+            session_stats.fresh_attempts + session_stats.improvement_attempts
+        )
+        overall_successes = (
+            session_stats.fresh_successes + session_stats.improvement_successes
+        )
 
         session_text = f"""Runtime: {runtime}
 Generated: {overall_attempts} attempts, {overall_successes} valid
@@ -114,12 +124,18 @@ Improvements:
         total_tiles = sum(tiles.tiles.values())
         unique_tiles = len(sorted_tiles)
 
-        overall_text = f"""Total Phrases: {stats['total_phrases']} | Max Score: {stats['max_score']}
+        overall_text = f"""Total Phrases: {stats["total_phrases"]} | Max Score: {stats["max_score"]}
 
 {total_tiles} tiles ({unique_tiles} unique)
 """
-        overall_text += ", ".join([f"[cyan]{count}[/cyan][green]{letter}[/green]" if count > 1 else f"[green]{letter}[/green]"
-                                 for letter, count in sorted_tiles])
+        overall_text += ", ".join(
+            [
+                f"[cyan]{count}[/cyan][green]{letter}[/green]"
+                if count > 1
+                else f"[green]{letter}[/green]"
+                for letter, count in sorted_tiles
+            ]
+        )
     except Exception as e:
         overall_text = f"Overall stats unavailable: {e}"
 
@@ -127,15 +143,21 @@ Improvements:
         Layout(Panel(top_text, title="Top Phrases"), ratio=4),
         Layout(Panel(recent_text, title="Recent Phrases"), ratio=4),
         Layout(Panel(session_text, title="Current Session"), ratio=4),
-        Layout(Panel(overall_text, title="Overall"), ratio=2)
+        Layout(Panel(overall_text, title="Overall"), ratio=2),
     )
 
     return layout
 
 
-async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
-                          ranker: PhraseRanker, config: OptimizationConfig,
-                          console: Console, iteration: int, generation_session: GenerationSession) -> int:
+async def generation_cycle(
+    tiles: TileInventory,
+    llm_client: OllamaClient,
+    ranker: PhraseRanker,
+    config: OptimizationConfig,
+    console: Console,
+    iteration: int,
+    generation_session: GenerationSession,
+) -> int:
     """
     Run a single generation cycle (either fresh generation or improvement).
 
@@ -147,20 +169,31 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
     """
     try:
         # New strategy: Check for improvable phrases first
-        improvable_phrases = ranker.get_improvable_phrases(10, MAX_FAILED_IMPROVEMENT_ATTEMPTS, MAX_CHILDREN_CREATED)
+        improvable_phrases = ranker.get_improvable_phrases(
+            999, MAX_FAILED_IMPROVEMENT_ATTEMPTS, MAX_CHILDREN_CREATED
+        )
 
         # Only do fresh generation if no phrases are improvable
         should_improve = len(improvable_phrases) > 0
         should_do_fresh = not should_improve
 
         if should_improve:
-            strategy_names = ["top-score", "weighted-random", "top-5-random", "pure-random"]
+            strategy_names = [
+                "top-score",
+                "weighted-random",
+                "top-5-random",
+                "pure-random",
+            ]
             next_strategy = strategy_names[iteration % 4]
-            logger.debug(f"Found {len(improvable_phrases)} improvable phrases. "
-                        f"Strategy: improvement [{next_strategy}]")
+            logger.debug(
+                f"Found {len(improvable_phrases)} improvable phrases. "
+                f"Strategy: improvement [{next_strategy}]"
+            )
         else:
-            logger.debug(f"Found {len(improvable_phrases)} improvable phrases. "
-                        f"Strategy: fresh generation")
+            logger.debug(
+                f"Found {len(improvable_phrases)} improvable phrases. "
+                f"Strategy: fresh generation"
+            )
 
         if should_improve:
             # Improvement cycle: Select phrase with weighted randomness
@@ -171,33 +204,30 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                 return 0
 
             # Show top candidates for visibility
-            top_3 = improvable_phrases[:min(3, len(improvable_phrases))]
+            top_3 = improvable_phrases[: min(3, len(improvable_phrases))]
             candidate_info = [f"'{p.phrase}' ({p.score})" for p in top_3]
             logger.debug(f"Top improvable candidates: {', '.join(candidate_info)}")
 
             # Weighted random selection - higher scores get better odds, but not guaranteed
             # Use strategy based on iteration to add variety
-            strategy = iteration % 4
+            strategy = iteration % 3
 
             if strategy == 0:
-                # 25% of time: Pure top score (deterministic)
+                # 33% of time: Pure top score (deterministic)
                 base_phrase_object = improvable_phrases[0]
                 selection_method = "top-score"
             elif strategy == 1:
-                # 25% of time: Weighted random (score-based probabilities)
+                # 33% of time: Weighted random (score-based probabilities)
                 scores = [phrase.score for phrase in improvable_phrases]
                 min_score = min(scores)
                 # Shift scores to be positive and add 1 to avoid zero weights
                 weights = [score - min_score + 1 for score in scores]
-                base_phrase_object = random.choices(improvable_phrases, weights=weights)[0]
+                base_phrase_object = random.choices(
+                    improvable_phrases, weights=weights
+                )[0]
                 selection_method = "weighted-random"
-            elif strategy == 2:
-                # 25% of time: Random from top 5 (or all if less than 5)
-                top_candidates = improvable_phrases[:min(5, len(improvable_phrases))]
-                base_phrase_object = random.choice(top_candidates)
-                selection_method = "top-5-random"
             else:
-                # 25% of time: Pure random
+                # 33% of time: Pure random
                 base_phrase_object = random.choice(improvable_phrases)
                 selection_method = "pure-random"
 
@@ -206,20 +236,26 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
             original_score = base_phrase_object.score
             base_phrase_id = base_phrase_object.id
 
-            logger.debug(f"Improving phrase: '{base_phrase}' (score: {original_score}, "
-                        f"failed: {base_phrase_object.consecutive_failed_improvements}, "
-                        f"children: {base_phrase_object.children_created}) "
-                        f"[{selection_method}]")
+            logger.debug(
+                f"Improving phrase: '{base_phrase}' (score: {original_score}, "
+                f"failed: {base_phrase_object.consecutive_failed_improvements}, "
+                f"children: {base_phrase_object.children_created}) "
+                f"[{selection_method}]"
+            )
 
             # Generate multiple attempts to improve this single phrase
             phrase_candidates = llm_client.improve_single_phrase(
                 base_phrase=base_phrase,
                 tiles=tiles,
-                num_attempts=config.generation_batch_size
+                num_attempts=config.generation_batch_size,
             )
 
             # For statistics tracking, we need the original score repeated for each attempt
-            original_scores = [original_score] * len(phrase_candidates) if phrase_candidates else [original_score]
+            original_scores = (
+                [original_score] * len(phrase_candidates)
+                if phrase_candidates
+                else [original_score]
+            )
 
             cycle_type = "improvement"
         else:
@@ -230,7 +266,7 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
             phrase_candidates = llm_client.generate_phrases(
                 tiles=tiles,
                 context_phrases=context_phrases,
-                batch_size=config.generation_batch_size
+                batch_size=config.generation_batch_size,
             )
 
             cycle_type = "fresh"
@@ -246,32 +282,40 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                     successes=0,
                     scores=[],
                     original_scores=original_scores,
-                    improved_scores=[]
+                    improved_scores=[],
                 )
             else:
                 generation_session.update_fresh_stats(
-                    attempts=config.generation_batch_size,
-                    successes=0,
-                    scores=[]
+                    attempts=config.generation_batch_size, successes=0, scores=[]
                 )
             return 0
 
         # Add to ranker (validates, scores, and stores)
         if should_improve:
             # For improvement cycles, pre-filter candidates to only include those better than parent
-            logger.debug(f"Pre-filtering {len(phrase_candidates)} improvement candidates against parent score {original_score}")
+            logger.debug(
+                f"Pre-filtering {len(phrase_candidates)} improvement candidates against parent score {original_score}"
+            )
 
             # First, validate and score the candidates without adding them
             temp_phrases = []
             for phrase in phrase_candidates:
-                is_valid, tiles_used, error = ranker.validator.validate_phrase(phrase, tiles)
+                is_valid, tiles_used, error = ranker.validator.validate_phrase(
+                    phrase, tiles
+                )
                 if is_valid:
                     score = ranker.scorer.score_phrase_simple(phrase, tiles_used)
-                    if score >= ranker.config.min_score_threshold and score > original_score:
+                    if (
+                        score >= ranker.config.min_score_threshold
+                        and score > original_score
+                    ):
                         # Only keep phrases that beat the parent AND meet minimum threshold
                         generated_phrase = ranker.scorer.create_scored_phrase(
-                            phrase, tiles, tiles_used, llm_client.model_name,
-                            f"{cycle_type.title()} generation"
+                            phrase,
+                            tiles,
+                            tiles_used,
+                            llm_client.model_name,
+                            f"{cycle_type.title()} generation",
                         )
                         temp_phrases.append(generated_phrase)
 
@@ -283,7 +327,9 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                     if phrase_id:  # Some might be None due to duplicates
                         phrase.id = phrase_id
                         added_phrases.append(phrase)
-                logger.info(f"Added {len(added_phrases)} improved phrases to database (filtered from {len(phrase_candidates)} candidates)")
+                logger.info(
+                    f"Added {len(added_phrases)} improved phrases to database (filtered from {len(phrase_candidates)} candidates)"
+                )
             else:
                 added_phrases = []
                 logger.debug("No improvement candidates beat the parent score")
@@ -293,7 +339,7 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                 phrase_candidates,
                 tiles,
                 llm_client.model_name,
-                f"{cycle_type.title()} generation"
+                f"{cycle_type.title()} generation",
             )
 
         # Track statistics
@@ -301,13 +347,15 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
 
         if should_improve:
             # Track improvement statistics
-            improved_scores = successful_scores if successful_scores else [0] * len(original_scores)
+            improved_scores = (
+                successful_scores if successful_scores else [0] * len(original_scores)
+            )
             generation_session.update_improvement_stats(
                 attempts=config.generation_batch_size,
                 successes=len(added_phrases),
                 scores=successful_scores,
                 original_scores=original_scores,
-                improved_scores=improved_scores
+                improved_scores=improved_scores,
             )
 
             # Track improvement success/failure for consecutive attempts strategy
@@ -315,22 +363,28 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
                 # Since we pre-filtered, all added_phrases are guaranteed to be better than parent
                 children_count = len(added_phrases)
                 ranker.mark_improvement_success(base_phrase_id, children_count)
-                logger.debug(f"Improvement success! Created {children_count} better children from '{base_phrase}' "
-                            f"(scores: {[p.score for p in added_phrases]} vs original {original_score})")
+                logger.debug(
+                    f"Improvement success! Created {children_count} better children from '{base_phrase}' "
+                    f"(scores: {[p.score for p in added_phrases]} vs original {original_score})"
+                )
             else:
                 # No better phrases generated, mark as failure
                 ranker.mark_improvement_failure(base_phrase_id)
-                logger.debug(f"Improvement failed - no phrases generated from '{base_phrase}' beat original score {original_score}")
+                logger.debug(
+                    f"Improvement failed - no phrases generated from '{base_phrase}' beat original score {original_score}"
+                )
         else:
             # Track fresh generation statistics
             generation_session.update_fresh_stats(
                 attempts=config.generation_batch_size,
                 successes=len(added_phrases),
-                scores=successful_scores
+                scores=successful_scores,
             )
 
-        logger.info(f"Generated {len(phrase_candidates)} {cycle_type} candidates, "
-                   f"added {len(added_phrases)} valid phrases")
+        logger.info(
+            f"Generated {len(phrase_candidates)} {cycle_type} candidates, "
+            f"added {len(added_phrases)} valid phrases"
+        )
 
         return len(added_phrases)
 
@@ -345,9 +399,14 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
         return 0
 
 
-async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
-                             console: Console, db_path: str = "data/phrases.db",
-                             model_name: str = "llama2:7b", skip_recalc: bool = False):
+async def main_generation_loop(
+    tiles_input: str,
+    config: OptimizationConfig,
+    console: Console,
+    db_path: str = "data/phrases.db",
+    model_name: str = "llama2:7b",
+    skip_recalc: bool = False,
+):
     """
     Main continuous generation loop with MacBook optimizations.
     """
@@ -376,29 +435,36 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
                 scorer = ScrabbleScorer()
                 validator = PhraseValidator()
 
-                recalc_stats = db.recalculate_scores_for_tileset(tiles, scorer, validator)
-                logger.info(f"Score recalculation completed: "
-                           f"{recalc_stats['updated_count']} phrases updated, "
-                           f"{recalc_stats['removed_count']} phrases removed (unbuildable)")
+                recalc_stats = db.recalculate_scores_for_tileset(
+                    tiles, scorer, validator
+                )
+                logger.info(
+                    f"Score recalculation completed: "
+                    f"{recalc_stats['updated_count']} phrases updated, "
+                    f"{recalc_stats['removed_count']} phrases removed (unbuildable)"
+                )
 
-                if recalc_stats['updated_count'] > 0:
-                    console.print(f"[green]Recalculated scores for {recalc_stats['updated_count']} phrases[/green]")
-                if recalc_stats['removed_count'] > 0:
-                    console.print(f"[yellow]Removed {recalc_stats['removed_count']} unbuildable phrases[/yellow]")
+                if recalc_stats["updated_count"] > 0:
+                    console.print(
+                        f"[green]Recalculated scores for {recalc_stats['updated_count']} phrases[/green]"
+                    )
+                if recalc_stats["removed_count"] > 0:
+                    console.print(
+                        f"[yellow]Removed {recalc_stats['removed_count']} unbuildable phrases[/yellow]"
+                    )
 
             except Exception as e:
                 logger.warning(f"Failed to recalculate scores: {e}")
-                console.print(f"[yellow]Warning: Could not recalculate phrase scores: {e}[/yellow]")
+                console.print(
+                    f"[yellow]Warning: Could not recalculate phrase scores: {e}[/yellow]"
+                )
         else:
             logger.info("Skipping phrase score recalculation (--skip-recalc flag set)")
             console.print("[blue]Skipping phrase score recalculation[/blue]")
 
         # Start session tracking
         session_id = db.start_generation_session(tiles_input)
-        generation_session = GenerationSession(
-            id=session_id,
-            tiles_input=tiles_input
-        )
+        generation_session = GenerationSession(id=session_id, tiles_input=tiles_input)
 
         logger.info(f"Started generation session {session_id}")
         logger.info(f"Using model: {llm_client.model_name}")
@@ -407,37 +473,52 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
         iteration = 0
         last_status_update = time.time()
 
-        with Live(create_status_display(ranker, tiles, generation_session),
-                  console=console, refresh_per_second=0.5) as live:
-
+        with Live(
+            create_status_display(ranker, tiles, generation_session),
+            console=console,
+            refresh_per_second=0.5,
+        ) as live:
             while running:
                 iteration += 1
                 cycle_start = time.time()
 
-# System health checking removed per user request
+                # System health checking removed per user request
 
                 # Update display every 10 seconds
                 if time.time() - last_status_update > 10:
-                    live.update(create_status_display(ranker, tiles, generation_session))
+                    live.update(
+                        create_status_display(ranker, tiles, generation_session)
+                    )
                     last_status_update = time.time()
 
-# Throttling removed per user request
+                # Throttling removed per user request
 
                 # Run generation cycle (fresh or improvement)
-                valid_phrases = await generation_cycle(tiles, llm_client, ranker, config, console, iteration, generation_session)
+                valid_phrases = await generation_cycle(
+                    tiles,
+                    llm_client,
+                    ranker,
+                    config,
+                    console,
+                    iteration,
+                    generation_session,
+                )
 
                 if valid_phrases > 0:
                     top_phrases = ranker.get_top_phrases(1)
                     if top_phrases:
-                        generation_session.top_score = max(generation_session.top_score,
-                                                         top_phrases[0].score)
+                        generation_session.top_score = max(
+                            generation_session.top_score, top_phrases[0].score
+                        )
 
                 # Calculate timing for next iteration
                 cycle_time = time.time() - cycle_start
                 sleep_time = max(0, config.iteration_delay_seconds - cycle_time)
 
-                logger.debug(f"Iteration {iteration} completed in {cycle_time:.1f}s, "
-                           f"sleeping for {sleep_time:.1f}s")
+                logger.debug(
+                    f"Iteration {iteration} completed in {cycle_time:.1f}s, "
+                    f"sleeping for {sleep_time:.1f}s"
+                )
 
                 # Sleep until next iteration
                 if sleep_time > 0:
@@ -451,7 +532,7 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
                             generation_session.phrases_generated,
                             generation_session.valid_phrases,
                             generation_session.top_score,
-                            generation_session.avg_score
+                            generation_session.avg_score,
                         )
                     except Exception as e:
                         logger.warning(f"Failed to update session stats: {e}")
@@ -477,10 +558,12 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
                     generation_session.phrases_generated,
                     generation_session.valid_phrases,
                     generation_session.top_score,
-                    generation_session.avg_score
+                    generation_session.avg_score,
                 )
-                logger.info(f"Session completed: {generation_session.valid_phrases} valid phrases "
-                           f"from {generation_session.phrases_generated} generated")
+                logger.info(
+                    f"Session completed: {generation_session.valid_phrases} valid phrases "
+                    f"from {generation_session.phrases_generated} generated"
+                )
             except Exception as e:
                 logger.warning(f"Failed final session update: {e}")
 
@@ -488,56 +571,81 @@ async def main_generation_loop(tiles_input: str, config: OptimizationConfig,
 
 
 # CLI Application
-app = typer.Typer(help="Scrabble Phrase Generator - Generate wintery phrases from tiles")
+app = typer.Typer(
+    help="Scrabble Phrase Generator - Generate wintery phrases from tiles"
+)
 
 
 @app.command()
 def generate(
-    tiles: str = typer.Argument(..., help="Tiles in format like '9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh'"),
+    tiles: str = typer.Argument(
+        ..., help="Tiles in format like '9i13e2mk10a3r5dj2t4s6o2bx5n5pc2_4glzvwyh'"
+    ),
     db_path: str = typer.Option("data/phrases.db", "--db", "-d", help="Database path"),
-    batch_size: int = typer.Option(15, "--batch", "-b", help="Phrases per generation cycle"),
+    batch_size: int = typer.Option(
+        15, "--batch", "-b", help="Phrases per generation cycle"
+    ),
     delay: int = typer.Option(30, "--delay", help="Seconds between cycles"),
     min_score: int = typer.Option(10, "--min-score", help="Minimum score threshold"),
-    max_phrases: int = typer.Option(1000, "--max-phrases", help="Maximum phrases to keep"),
+    max_phrases: int = typer.Option(
+        1000, "--max-phrases", help="Maximum phrases to keep"
+    ),
     model: str = typer.Option("llama2:7b", "--model", "-m", help="Ollama model to use"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose logging"),
-    skip_recalc: bool = typer.Option(False, "--skip-recalc", help="Skip phrase score recalculation")
+    skip_recalc: bool = typer.Option(
+        False, "--skip-recalc", help="Skip phrase score recalculation"
+    ),
 ):
     """Start continuous phrase generation."""
     console = Console()
 
     # Configure logging
     logger.remove()  # Remove default handler
-    log_level = "DEBUG" if verbose else "ERROR"  # Only show errors on screen unless verbose
+    log_level = (
+        "DEBUG" if verbose else "ERROR"
+    )  # Only show errors on screen unless verbose
 
     # Only show logs on screen if in verbose mode, otherwise just log to file
     if verbose:
-        logger.add(sys.stderr, level="DEBUG", format="<green>{time}</green> | <level>{level}</level> | {message}")
+        logger.add(
+            sys.stderr,
+            level="DEBUG",
+            format="<green>{time}</green> | <level>{level}</level> | {message}",
+        )
     else:
         # In non-verbose mode, only show critical errors on screen
         logger.add(sys.stderr, level="ERROR", format="ERROR: {message}")
 
     # Always log detailed info to file
-    logger.add("logs/generator.log", rotation="1 day", retention="7 days", level="DEBUG")
+    logger.add(
+        "logs/generator.log", rotation="1 day", retention="7 days", level="DEBUG"
+    )
 
     # Create logs directory
     Path("logs").mkdir(exist_ok=True)
 
     # Configure separate logger for raw LLM interactions (prompts + responses)
     from loguru import logger as llm_logger
-    llm_logger.add("logs/llm_interactions.log",
-                   rotation="1 day",
-                   retention="7 days",
-                   level="DEBUG",
-                   filter=lambda record: any(phrase in record["message"] for phrase in [
-                       "Raw LLM response",
-                       "Fresh generation prompt",
-                       "Single phrase improvement prompt"
-                   ]),
-                   format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+
+    llm_logger.add(
+        "logs/llm_interactions.log",
+        rotation="1 day",
+        retention="7 days",
+        level="DEBUG",
+        filter=lambda record: any(
+            phrase in record["message"]
+            for phrase in [
+                "Raw LLM response",
+                "Fresh generation prompt",
+                "Single phrase improvement prompt",
+            ]
+        ),
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+    )
 
     # Configure standard Python logging to not interfere with TUI
     import logging
+
     if not verbose:
         logging.getLogger().setLevel(logging.ERROR)  # Suppress most standard logging
 
@@ -545,26 +653,30 @@ def generate(
         generation_batch_size=batch_size,
         iteration_delay_seconds=delay,
         min_score_threshold=min_score,
-        max_phrases_stored=max_phrases
+        max_phrases_stored=max_phrases,
     )
 
-    console.print(Panel.fit(
-        f"Starting Scrabble Phrase Generator\n"
-        f"Tiles: {tiles}\n"
-        f"Model: {model}\n"
-        f"Batch size: {batch_size}\n"
-        f"Delay: {delay}s\n"
-        f"Min score: {min_score}\n"
-        f"Database: {db_path}",
-        title="Configuration"
-    ))
+    console.print(
+        Panel.fit(
+            f"Starting Scrabble Phrase Generator\n"
+            f"Tiles: {tiles}\n"
+            f"Model: {model}\n"
+            f"Batch size: {batch_size}\n"
+            f"Delay: {delay}s\n"
+            f"Min score: {min_score}\n"
+            f"Database: {db_path}",
+            title="Configuration",
+        )
+    )
 
     # Set up signal handler for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
 
     # Run the generation loop
     try:
-        result = asyncio.run(main_generation_loop(tiles, config, console, db_path, model, skip_recalc))
+        result = asyncio.run(
+            main_generation_loop(tiles, config, console, db_path, model, skip_recalc)
+        )
         if result:
             console.print("[green]Generation completed successfully[/green]")
         else:
@@ -582,7 +694,7 @@ def generate(
 @app.command()
 def status(
     db_path: str = typer.Option("data/phrases.db", "--db", "-d", help="Database path"),
-    top: int = typer.Option(10, "--top", "-t", help="Number of top phrases to show")
+    top: int = typer.Option(10, "--top", "-t", help="Number of top phrases to show"),
 ):
     """Show current status and top phrases."""
     console = Console()
@@ -592,12 +704,14 @@ def status(
         stats = ranker.get_ranking_stats()
 
         # Overall stats
-        console.print(Panel.fit(
-            f"Total phrases: {stats['total_phrases']}\n"
-            f"Max score: {stats['max_score']}\n"
-            f"Average score: {stats['avg_score']:.1f}",
-            title="Database Statistics"
-        ))
+        console.print(
+            Panel.fit(
+                f"Total phrases: {stats['total_phrases']}\n"
+                f"Max score: {stats['max_score']}\n"
+                f"Average score: {stats['avg_score']:.1f}",
+                title="Database Statistics",
+            )
+        )
 
         # Top phrases
         top_phrases = ranker.get_top_phrases(top)
@@ -627,7 +741,9 @@ def status(
                 if failed_attempts >= MAX_FAILED_IMPROVEMENT_ATTEMPTS:
                     status = "[red]RETIRED-F[/red]"  # Retired due to failures
                 elif children_created >= MAX_CHILDREN_CREATED:
-                    status = "[yellow]RETIRED-C[/yellow]"  # Retired due to children created
+                    status = (
+                        "[yellow]RETIRED-C[/yellow]"  # Retired due to children created
+                    )
                 else:
                     status = "[green]ACTIVE[/green]"
 
@@ -638,7 +754,7 @@ def status(
                     f"{failed_color}{failed_attempts}[/{failed_color[1:]}",
                     f"[bright_green]{children_created}[/bright_green]",
                     status,
-                    phrase.generated_at.strftime("%m/%d %H:%M")
+                    phrase.generated_at.strftime("%m/%d %H:%M"),
                 )
 
             console.print(table)
@@ -654,8 +770,12 @@ def status(
 def remove_word(
     word: str = typer.Argument(..., help="Word to search for and remove from phrases"),
     db_path: str = typer.Option("data/phrases.db", "--db", "-d", help="Database path"),
-    case_sensitive: bool = typer.Option(False, "--case-sensitive", "-c", help="Case sensitive search"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be removed without actually deleting")
+    case_sensitive: bool = typer.Option(
+        False, "--case-sensitive", "-c", help="Case sensitive search"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be removed without actually deleting"
+    ),
 ):
     """Remove all phrases containing a specific word."""
     console = Console()
@@ -667,19 +787,28 @@ def remove_word(
             # Show what would be removed
             with sqlite3.connect(db_path) as conn:
                 if case_sensitive:
-                    cursor = conn.execute("SELECT phrase FROM phrases WHERE phrase LIKE ?", (f"%{word}%",))
+                    cursor = conn.execute(
+                        "SELECT phrase FROM phrases WHERE phrase LIKE ?", (f"%{word}%",)
+                    )
                 else:
-                    cursor = conn.execute("SELECT phrase FROM phrases WHERE UPPER(phrase) LIKE UPPER(?)", (f"%{word}%",))
+                    cursor = conn.execute(
+                        "SELECT phrase FROM phrases WHERE UPPER(phrase) LIKE UPPER(?)",
+                        (f"%{word}%",),
+                    )
 
                 matching_phrases = cursor.fetchall()
 
             if matching_phrases:
-                console.print(f"[yellow]DRY RUN: Would remove {len(matching_phrases)} phrases containing '{word}':[/yellow]")
+                console.print(
+                    f"[yellow]DRY RUN: Would remove {len(matching_phrases)} phrases containing '{word}':[/yellow]"
+                )
                 for phrase_row in matching_phrases[:10]:  # Show first 10
                     console.print(f"  - {phrase_row[0]}")
                 if len(matching_phrases) > 10:
                     console.print(f"  ... and {len(matching_phrases) - 10} more")
-                console.print(f"\n[yellow]Run without --dry-run to actually delete these phrases.[/yellow]")
+                console.print(
+                    f"\n[yellow]Run without --dry-run to actually delete these phrases.[/yellow]"
+                )
             else:
                 console.print(f"[green]No phrases found containing '{word}'[/green]")
         else:
@@ -687,7 +816,9 @@ def remove_word(
             deleted_count = db.remove_phrases_containing_word(word, case_sensitive)
 
             if deleted_count > 0:
-                console.print(f"[green]Successfully removed {deleted_count} phrases containing '{word}'[/green]")
+                console.print(
+                    f"[green]Successfully removed {deleted_count} phrases containing '{word}'[/green]"
+                )
             else:
                 console.print(f"[yellow]No phrases found containing '{word}'[/yellow]")
 

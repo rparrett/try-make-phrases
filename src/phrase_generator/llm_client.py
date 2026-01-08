@@ -162,7 +162,7 @@ FEEL FREE TO USE THESE OPTIONAL HIGH VALUE WORDS IN YOUR OUTPUT:
         prompt = f"""Create {batch_size} winter-themed phrases.
 
 RULES:
-- Must not be full-blown sentences. Phrases only. Try for 4-10 words.
+- Short phrases and expressions only. Try for 4-10 words.
 - Spaces and punctuation are okay
 - Focus on winter, snow, holiday themes
 
@@ -385,6 +385,11 @@ FEEL FREE TO USE THESE OPTIONAL HIGH VALUE WORDS FOR YOUR IMPROVEMENTS:
         prompt = f"""Improve this winter phrase by making {num_attempts} different variations using tiles: {tiles_display}
 
 {leftover_section}
+
+RULES:
+- Short phrases, expressions, and fragments only. Try for 4-10 words.
+- Spaces and punctuation are okay
+- Focus on winter, snow, holiday themes
 
 IMPROVEMENT METHODS:
 - Add adjectives: COLD BREEZE → COLD WINTER BREEZE
