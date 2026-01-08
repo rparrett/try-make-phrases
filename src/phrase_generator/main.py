@@ -56,6 +56,45 @@ def add_phrase_attempt(phrase: str, score: int, accepted: bool, reason: str = ""
         recent_phrase_attempts.pop(0)
 
 
+def validate_model_availability(model_name: str) -> None:
+    """Validate that the specified Ollama model is available."""
+    import ollama
+
+    try:
+        # Try to list models to check Ollama connection
+        models_response = ollama.list()
+
+        # Handle the new typed response from ollama
+        model_names = []
+        if hasattr(models_response, "models"):
+            # New ollama client returns ListResponse object
+            for model in models_response.models:
+                if hasattr(model, "model"):
+                    model_names.append(model.model)
+                elif hasattr(model, "name"):
+                    model_names.append(model.name)
+        elif isinstance(models_response, dict) and "models" in models_response:
+            # Fallback for older API format
+            for model in models_response["models"]:
+                if isinstance(model, dict):
+                    name = model.get("name") or model.get("model")
+                    if name:
+                        model_names.append(name)
+
+        if model_name not in model_names:
+            logger.error(f"Model '{model_name}' is not available in Ollama")
+            logger.error(f"Available models: {', '.join(model_names)}")
+            logger.error("Use 'ollama pull <model>' to download a model first")
+            raise typer.Exit(1)
+
+        logger.info(f"Model '{model_name}' is available")
+
+    except Exception as e:
+        logger.error(f"Failed to connect to Ollama: {e}")
+        logger.error("Make sure Ollama is running")
+        raise typer.Exit(1)
+
+
 def signal_handler(sig, frame):
     """Handle graceful shutdown on SIGINT."""
     global running
@@ -499,6 +538,9 @@ async def main_generation_loop(
         tiles = parse_tile_string(tiles_input)
         logger.info(f"Parsed {sum(tiles.tiles.values())} tiles: {tiles.tiles}")
 
+        # Validate model availability first
+        validate_model_availability(model_name)
+
         # Initialize components
         llm_client = OllamaClient(model_name)
         ranker = PhraseRanker(db_path, config)
@@ -669,7 +711,7 @@ def generate(
     max_phrases: int = typer.Option(
         1000, "--max-phrases", help="Maximum phrases to keep"
     ),
-    model: str = typer.Option("llama2:7b", "--model", "-m", help="Ollama model to use"),
+    model: str = typer.Option(..., "--model", "-m", help="Ollama model to use"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose logging"),
     skip_recalc: bool = typer.Option(
         False, "--skip-recalc", help="Skip phrase score recalculation"

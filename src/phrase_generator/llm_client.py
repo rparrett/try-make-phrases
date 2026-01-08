@@ -61,43 +61,11 @@ class OllamaClient:
             self.logger.info(f"Available Ollama models: {model_names}")
 
             if self.model_name not in model_names:
-                self.logger.warning(
-                    f"Model {self.model_name} not found in available models: {model_names}"
+                raise LLMError(
+                    f"Model '{self.model_name}' not available in Ollama. "
+                    f"Available models: {', '.join(model_names)}. "
+                    f"Use 'ollama pull {self.model_name}' to download it first."
                 )
-
-                # Try to pull the model if it's a standard one
-                if self.model_name in [
-                    "llama2:7b",
-                    "mistral:7b",
-                    "phi:2.7b",
-                    "llama2",
-                    "mistral",
-                    "phi",
-                ]:
-                    self.logger.info(f"Attempting to pull model: {self.model_name}")
-                    try:
-                        ollama.pull(self.model_name)
-                        self.logger.info(
-                            f"Successfully pulled model: {self.model_name}"
-                        )
-                    except Exception as pull_error:
-                        self.logger.error(f"Failed to pull model: {pull_error}")
-                        if model_names:
-                            self.model_name = model_names[0]
-                            self.logger.warning(
-                                f"Using first available model as fallback: {self.model_name}"
-                            )
-                        else:
-                            raise LLMError(
-                                f"No models available and failed to pull {self.model_name}"
-                            )
-                else:
-                    # Use first available model as fallback
-                    if model_names:
-                        self.model_name = model_names[0]
-                        self.logger.warning(f"Using fallback model: {self.model_name}")
-                    else:
-                        raise LLMError("No models available in Ollama")
             else:
                 self.logger.info(f"Using model: {self.model_name}")
 
