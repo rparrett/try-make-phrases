@@ -175,7 +175,6 @@ async def generation_cycle(
 
         # Only do fresh generation if no phrases are improvable
         should_improve = len(improvable_phrases) > 0
-        should_do_fresh = not should_improve
 
         if should_improve:
             strategy_names = [
@@ -601,9 +600,6 @@ def generate(
 
     # Configure logging
     logger.remove()  # Remove default handler
-    log_level = (
-        "DEBUG" if verbose else "ERROR"
-    )  # Only show errors on screen unless verbose
 
     # Only show logs on screen if in verbose mode, otherwise just log to file
     if verbose:

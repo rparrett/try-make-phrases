@@ -108,7 +108,7 @@ class OllamaClient:
             # Try a simple ping to check if Ollama is running
             try:
                 # Try a minimal generate call to test connection
-                test_response = ollama.generate(
+                ollama.generate(
                     model=self.model_name, prompt="test", options={"num_predict": 1}
                 )
                 self.logger.info(
@@ -143,8 +143,6 @@ class OllamaClient:
                 available_letters.append(letter)
             else:
                 available_letters.append(f"{letter}×{count}")
-
-        tiles_display = " ".join(available_letters)
 
         # Get high-value inspiration words from dictionary
         word_dict = get_word_dictionary()
