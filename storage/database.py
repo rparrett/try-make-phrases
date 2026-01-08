@@ -354,6 +354,43 @@ class PhraseDatabase:
         except Exception as e:
             raise DatabaseError(f"Failed to cleanup phrases: {e}")
 
+    def remove_phrases_containing_word(self, word: str, case_sensitive: bool = False) -> int:
+        """Remove all phrases that contain a specific word.
+
+        Args:
+            word: The word to search for
+            case_sensitive: Whether the search should be case sensitive
+
+        Returns:
+            Number of phrases removed
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                if case_sensitive:
+                    # Case sensitive search
+                    cursor = conn.execute("""
+                        DELETE FROM phrases
+                        WHERE phrase LIKE ?
+                    """, (f"%{word}%",))
+                else:
+                    # Case insensitive search
+                    cursor = conn.execute("""
+                        DELETE FROM phrases
+                        WHERE UPPER(phrase) LIKE UPPER(?)
+                    """, (f"%{word}%",))
+
+                deleted_count = cursor.rowcount
+                conn.commit()
+
+                # Vacuum to reclaim space if significant deletions
+                if deleted_count > 10:
+                    conn.execute("VACUUM")
+
+                return deleted_count
+
+        except Exception as e:
+            raise DatabaseError(f"Failed to remove phrases containing '{word}': {e}")
+
     def get_improvable_phrases(self, limit: int = 10, max_failed_attempts: int = 5, max_children_created: int = 5) -> List[GeneratedPhrase]:
         """Get phrases that can still be improved (haven't reached retirement thresholds)."""
         try:

@@ -7,6 +7,7 @@ import time
 # psutil import removed (system health monitoring removed)
 import signal
 import sys
+import sqlite3
 from datetime import datetime, timedelta
 from typing import Optional, List
 from pathlib import Path
@@ -152,19 +153,53 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
         should_improve = len(improvable_phrases) > 0
         should_do_fresh = not should_improve
 
-        logger.debug(f"Found {len(improvable_phrases)} improvable phrases. "
-                    f"Strategy: {'improvement' if should_improve else 'fresh generation'}")
+        if should_improve:
+            strategy_names = ["top-score", "weighted-random", "top-5-random", "pure-random"]
+            next_strategy = strategy_names[iteration % 4]
+            logger.debug(f"Found {len(improvable_phrases)} improvable phrases. "
+                        f"Strategy: improvement [{next_strategy}]")
+        else:
+            logger.debug(f"Found {len(improvable_phrases)} improvable phrases. "
+                        f"Strategy: fresh generation")
 
         if should_improve:
-            # Improvement cycle: Select the best improvable phrase
+            # Improvement cycle: Select phrase with weighted randomness
             import random
 
-            # Prioritize higher-scoring improvable phrases, but add some randomness
-            base_phrase_object = improvable_phrases[0] if improvable_phrases else None
-
-            if not base_phrase_object:
+            if not improvable_phrases:
                 logger.warning("No improvable phrase available")
                 return 0
+
+            # Show top candidates for visibility
+            top_3 = improvable_phrases[:min(3, len(improvable_phrases))]
+            candidate_info = [f"'{p.phrase}' ({p.score})" for p in top_3]
+            logger.debug(f"Top improvable candidates: {', '.join(candidate_info)}")
+
+            # Weighted random selection - higher scores get better odds, but not guaranteed
+            # Use strategy based on iteration to add variety
+            strategy = iteration % 4
+
+            if strategy == 0:
+                # 25% of time: Pure top score (deterministic)
+                base_phrase_object = improvable_phrases[0]
+                selection_method = "top-score"
+            elif strategy == 1:
+                # 25% of time: Weighted random (score-based probabilities)
+                scores = [phrase.score for phrase in improvable_phrases]
+                min_score = min(scores)
+                # Shift scores to be positive and add 1 to avoid zero weights
+                weights = [score - min_score + 1 for score in scores]
+                base_phrase_object = random.choices(improvable_phrases, weights=weights)[0]
+                selection_method = "weighted-random"
+            elif strategy == 2:
+                # 25% of time: Random from top 5 (or all if less than 5)
+                top_candidates = improvable_phrases[:min(5, len(improvable_phrases))]
+                base_phrase_object = random.choice(top_candidates)
+                selection_method = "top-5-random"
+            else:
+                # 25% of time: Pure random
+                base_phrase_object = random.choice(improvable_phrases)
+                selection_method = "pure-random"
 
             # Extract phrase and score for improvement tracking
             base_phrase = base_phrase_object.phrase
@@ -173,7 +208,8 @@ async def generation_cycle(tiles: TileInventory, llm_client: OllamaClient,
 
             logger.debug(f"Improving phrase: '{base_phrase}' (score: {original_score}, "
                         f"failed: {base_phrase_object.consecutive_failed_improvements}, "
-                        f"children: {base_phrase_object.children_created})")
+                        f"children: {base_phrase_object.children_created}) "
+                        f"[{selection_method}]")
 
             # Generate multiple attempts to improve this single phrase
             phrase_candidates = llm_client.improve_single_phrase(
@@ -608,6 +644,52 @@ def status(
             console.print(table)
         else:
             console.print("[yellow]No phrases found in database[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def remove_word(
+    word: str = typer.Argument(..., help="Word to search for and remove from phrases"),
+    db_path: str = typer.Option("data/phrases.db", "--db", "-d", help="Database path"),
+    case_sensitive: bool = typer.Option(False, "--case-sensitive", "-c", help="Case sensitive search"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be removed without actually deleting")
+):
+    """Remove all phrases containing a specific word."""
+    console = Console()
+
+    try:
+        db = PhraseDatabase(db_path)
+
+        if dry_run:
+            # Show what would be removed
+            with sqlite3.connect(db_path) as conn:
+                if case_sensitive:
+                    cursor = conn.execute("SELECT phrase FROM phrases WHERE phrase LIKE ?", (f"%{word}%",))
+                else:
+                    cursor = conn.execute("SELECT phrase FROM phrases WHERE UPPER(phrase) LIKE UPPER(?)", (f"%{word}%",))
+
+                matching_phrases = cursor.fetchall()
+
+            if matching_phrases:
+                console.print(f"[yellow]DRY RUN: Would remove {len(matching_phrases)} phrases containing '{word}':[/yellow]")
+                for phrase_row in matching_phrases[:10]:  # Show first 10
+                    console.print(f"  - {phrase_row[0]}")
+                if len(matching_phrases) > 10:
+                    console.print(f"  ... and {len(matching_phrases) - 10} more")
+                console.print(f"\n[yellow]Run without --dry-run to actually delete these phrases.[/yellow]")
+            else:
+                console.print(f"[green]No phrases found containing '{word}'[/green]")
+        else:
+            # Actually remove the phrases
+            deleted_count = db.remove_phrases_containing_word(word, case_sensitive)
+
+            if deleted_count > 0:
+                console.print(f"[green]Successfully removed {deleted_count} phrases containing '{word}'[/green]")
+            else:
+                console.print(f"[yellow]No phrases found containing '{word}'[/yellow]")
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
