@@ -19,7 +19,7 @@ from storage.database import PhraseDatabase
 def recalculate_scores(tiles_input: str, db_path: str = "data/phrases.db"):
     """Recalculate all phrase scores for the given tile set."""
     try:
-        print(f"🎯 Recalculating Phrase Scores")
+        print("🎯 Recalculating Phrase Scores")
         print(f"Tiles: {tiles_input}")
         print(f"Database: {db_path}")
         print("-" * 50)
@@ -47,7 +47,7 @@ def recalculate_scores(tiles_input: str, db_path: str = "data/phrases.db"):
         # Recalculate scores
         recalc_stats = db.recalculate_scores_for_tileset(tiles, scorer, validator)
 
-        print(f"\n✅ Recalculation Complete!")
+        print("\n✅ Recalculation Complete!")
         print(f"📈 Phrases updated: {recalc_stats['updated_count']}")
         print(f"🗑️  Phrases removed: {recalc_stats['removed_count']} (unbuildable)")
 
@@ -57,7 +57,7 @@ def recalculate_scores(tiles_input: str, db_path: str = "data/phrases.db"):
 
         # Show some score changes if verbose
         if len(sys.argv) > 2 and sys.argv[2] == "--verbose":
-            print(f"\n📋 Score Changes (showing first 10):")
+            print("\n📋 Score Changes (showing first 10):")
             for phrase, score in recalc_stats["score_changes"][:10]:
                 print(f"   {phrase}: {score}")
 

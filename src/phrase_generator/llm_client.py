@@ -7,7 +7,7 @@ from typing import List, Optional, Dict
 import re
 import time
 from loguru import logger
-from storage.models import TileInventory, GeneratedPhrase
+from storage.models import TileInventory
 from src.phrase_generator.word_dictionary import get_word_dictionary
 
 
@@ -114,7 +114,7 @@ class OllamaClient:
                 self.logger.info(
                     f"Ollama connection verified with model: {self.model_name}"
                 )
-            except Exception as test_error:
+            except Exception:
                 raise LLMError(
                     f"Failed to connect to Ollama. Make sure Ollama is running and the model is available. Error: {e}"
                 )

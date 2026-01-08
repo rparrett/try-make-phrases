@@ -9,8 +9,8 @@ import time
 import signal
 import sys
 import sqlite3
-from datetime import datetime, timedelta
-from typing import Optional, List
+from datetime import datetime
+from typing import Optional
 from pathlib import Path
 
 import typer
@@ -807,7 +807,7 @@ def remove_word(
                 if len(matching_phrases) > 10:
                     console.print(f"  ... and {len(matching_phrases) - 10} more")
                 console.print(
-                    f"\n[yellow]Run without --dry-run to actually delete these phrases.[/yellow]"
+                    "\n[yellow]Run without --dry-run to actually delete these phrases.[/yellow]"
                 )
             else:
                 console.print(f"[green]No phrases found containing '{word}'[/green]")

@@ -5,7 +5,6 @@ Allows you to add manually discovered high-scoring phrases to the database.
 """
 
 import sys
-import json
 from pathlib import Path
 
 # Add src to path for imports

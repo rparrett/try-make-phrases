@@ -3,7 +3,7 @@ Phrase ranking and optimization system with SQLite persistence.
 """
 
 from loguru import logger
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from datetime import datetime
 
 from storage.models import GeneratedPhrase, TileInventory, OptimizationConfig
@@ -353,7 +353,7 @@ if __name__ == "__main__":
 
     # Get top phrases
     top_phrases = ranker.get_top_phrases(5)
-    print(f"\nTop 5 phrases:")
+    print("\nTop 5 phrases:")
     for i, phrase in enumerate(top_phrases, 1):
         print(f"  {i}. {phrase}")
 

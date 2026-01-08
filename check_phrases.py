@@ -11,7 +11,6 @@ import sqlite3
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from storage.database import PhraseDatabase
 
 
 def check_database(db_path: str = "data/phrases.db"):
@@ -49,7 +48,7 @@ def check_database(db_path: str = "data/phrases.db"):
             for i, row in enumerate(manual, 1):
                 print(f"{i:2}. {row['phrase']} ({row['score']})")
 
-        print(f"\n🏆 Top Scoring Phrases (All Sources):")
+        print("\n🏆 Top Scoring Phrases (All Sources):")
         print("-" * 50)
         top_phrases = conn.execute("""
             SELECT phrase, score, model_used
@@ -62,7 +61,7 @@ def check_database(db_path: str = "data/phrases.db"):
             source = "✋" if row["model_used"] == "manual-entry" else "🤖"
             print(f"{i:2}. {source} {row['phrase']} ({row['score']})")
 
-        print(f"\n📈 Recent Activity (Last 10):")
+        print("\n📈 Recent Activity (Last 10):")
         print("-" * 50)
         recent = conn.execute("""
             SELECT phrase, score, model_used, generated_at

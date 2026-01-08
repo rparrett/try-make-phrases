@@ -5,10 +5,10 @@ SQLite database operations for phrase storage and ranking.
 import sqlite3
 import json
 from datetime import datetime
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Dict
 from pathlib import Path
 
-from storage.models import GeneratedPhrase, GenerationSession, OptimizationConfig
+from storage.models import GeneratedPhrase, GenerationSession
 
 
 class DatabaseError(Exception):
